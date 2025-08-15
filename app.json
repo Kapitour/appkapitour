@@ -1,5 +1,10 @@
 {
   "android": {
     "package": "com.barralbruno.kapitest"
+  },
+  "extra": {
+    "eas": {
+      "projectId": "31953773-dd59-4e17-8456-752f2924985e"
+    }
   }
 }

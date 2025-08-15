@@ -101,7 +101,7 @@ export default function App() {
     const hideNavigationBar = async () => {
       try {
         await SystemUI.setBackgroundColorAsync("black");
-        await NavigationBar.setBehaviorAsync("inset-swipe");
+        //await NavigationBar.setBehaviorAsync("inset-swipe");
         await NavigationBar.setVisibilityAsync("hidden");
       } catch (error) {
         console.warn("Erro ao esconder NavigationBar:", error);
