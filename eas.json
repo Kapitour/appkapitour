@@ -7,17 +7,30 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "android":{
-        "buildType":"apk"},
-      "channel": "development"
+      "android": {
+        "buildType": "apk"
+      },
+      "channel": "development",
+      "env": {
+        "EAS_USE_PNPM": "true"
+      }
     },
     "preview": {
       "distribution": "internal",
-      "channel": "preview"
+      "channel": "preview",
+      "env": {
+        "EAS_USE_PNPM": "true"
+      }
     },
     "production": {
       "autoIncrement": true,
-      "channel": "production"
+      "channel": "production",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EAS_USE_PNPM": "true"
+      }
     }
   },
   "submit": {
