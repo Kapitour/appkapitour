@@ -1,3 +1,6 @@
 {
-  "urlRandomness": "wHTmB8I"
+  "urlRandomness": "wHTmB8I",
+  "dev": true,
+  "minify": false,
+  "https": false
 }
