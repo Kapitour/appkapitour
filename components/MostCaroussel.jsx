@@ -67,16 +67,15 @@ const MostCaroussel = () => {
       <ScrollView horizontal={true} showsHorizontalScrollIndicator={false}>
         {rotas.map((rota, index) => (
           <LinearGradient
+            key={index}
             colors={["#c83349", "#f7a000"]}
             start={{ x: 1, y: 1 }}
             end={{ x: 0, y: 0 }}
             style={styles.box}
           >
-            {/* Lembre-se, a key deve ir aqui no LinearGradient */}
-            <View key={index} style={styles.boxContent}>
+            <View style={styles.boxContent}>
               {/* Imagem */}
               <Image source={{ uri: rota.imagem }} style={styles.image} />
-
               <Text style={styles.nome}>{rota.nome}</Text>
             </View>
           </LinearGradient>
@@ -101,6 +100,10 @@ const styles = StyleSheet.create({
     width: 150,
     margin: 10,
     overflow: "hidden",
+  },
+  boxContent: {
+    flex: 1,
+    justifyContent: "space-between",
   },
   image: {
     width: "100%",

@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { supabase } from "../lib/supabase";
+import { LinearGradient } from "expo-linear-gradient";
 import Checkbox from "expo-checkbox";
 
 export default function DetalhesRota({ rota, voltar }) {
@@ -58,92 +59,216 @@ export default function DetalhesRota({ rota, voltar }) {
     ? (pontos.filter((p) => p.completed).length / pontos.length) * 100
     : 0;
 
-  if (loading) return <ActivityIndicator size="large" color="#C3073F" />;
+  if (loading) {
+    return (
+      <LinearGradient
+        colors={["#0f142c", "#c83349", "#f7a000"]}
+        start={{ x: 1.5, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.containerPrincipal}
+      >
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#fff" />
+          <Text style={styles.loadingText}>Carregando detalhes da rota...</Text>
+        </View>
+      </LinearGradient>
+    );
+  }
 
   return (
-    <ScrollView style={styles.container}>
-      <TouchableOpacity onPress={voltar} style={styles.voltar}>
-        <Text style={styles.voltarText}>← Voltar</Text>
-      </TouchableOpacity>
+    <LinearGradient
+      colors={["#0f142c", "#c83349", "#f7a000"]}
+      start={{ x: 1.5, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.containerPrincipal}
+    >
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.contentContainer}
+      >
+        <TouchableOpacity onPress={voltar} style={styles.voltar}>
+          <Text style={styles.voltarText}>← Voltar</Text>
+        </TouchableOpacity>
 
-      <Text style={styles.titulo}>{rota.nome}</Text>
-      <Text style={styles.descricao}>{rota.descricao}</Text>
+        <Text style={styles.titulo}>{rota.nome}</Text>
+        <Text style={styles.descricao}>{rota.descricao}</Text>
 
-      <View style={styles.progressBar}>
-        <View style={[styles.progressFill, { width: `${progresso}%` }]} />
-      </View>
-
-      {pontos.map((p, i) => (
-        <View key={p.id} style={styles.pontoCard}>
-          <View style={styles.checkboxContainer}>
-            <Checkbox
-              value={p.completed}
-              onValueChange={() => toggleCheckbox(i)}
-              color={p.completed ? "#C3073F" : undefined}
-            />
-            <Text style={[styles.pontoNome, p.completed && styles.completed]}>
-              {p.nome}
-            </Text>
+        <View style={styles.progressContainer}>
+          <Text style={styles.progressText}>
+            Progresso: {Math.round(progresso)}%
+          </Text>
+          <View style={styles.progressBar}>
+            <View style={[styles.progressFill, { width: `${progresso}%` }]} />
           </View>
-          <Text style={styles.pontoDesc}>{p.descricao}</Text>
-          <TouchableOpacity
-            onPress={() =>
-              Linking.openURL(
-                `https://www.google.com/maps/dir/?api=1&destination=${p.latitude},${p.longitude}`
-              )
-            }
-            style={styles.gpsButton}
-          >
-            <Text style={styles.gpsText}>Iniciar Rota no GPS</Text>
-          </TouchableOpacity>
         </View>
-      ))}
-    </ScrollView>
+
+        {pontos.map((p, i) => (
+          <View key={p.id} style={styles.pontoCard}>
+            <View style={styles.checkboxContainer}>
+              <Checkbox
+                value={p.completed}
+                onValueChange={() => toggleCheckbox(i)}
+                color={p.completed ? "#f7a000" : undefined}
+              />
+              <Text style={[styles.pontoNome, p.completed && styles.completed]}>
+                {p.nome}
+              </Text>
+            </View>
+            <Text style={styles.pontoDesc}>{p.descricao}</Text>
+            <TouchableOpacity
+              onPress={() =>
+                Linking.openURL(
+                  `https://www.google.com/maps/dir/?api=1&destination=${p.latitude},${p.longitude}`
+                )
+              }
+              style={styles.gpsButton}
+            >
+              <Text style={styles.gpsText}>📍 Iniciar Rota no GPS</Text>
+            </TouchableOpacity>
+          </View>
+        ))}
+      </ScrollView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 20, backgroundColor: "#1a1a1d" },
-  voltar: {
-    marginBottom: 30,
-    marginTop: 30,
-    color: "white",
-    backgroundColor: "#C3073F",
-    padding: 10,
+  // Estilos principais seguindo o padrão do Rotas.jsx
+  containerPrincipal: {
+    flex: 1,
   },
-  voltarText: { color: "white", fontSize: 16 },
-  titulo: { fontSize: 22, fontWeight: "bold", color: "#fff" },
-  descricao: { color: "#ccc", marginVertical: 10 },
+  scroll: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+  contentContainer: {
+    padding: 20,
+    alignItems: "center",
+  },
+  
+  // Loading
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    color: "#fff",
+    marginTop: 10,
+    fontSize: 16,
+  },
+
+  // Botão voltar melhorado
+  voltar: {
+    backgroundColor: "#c3073f",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 12,
+    marginBottom: 20,
+    alignSelf: "flex-start",
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  voltarText: { 
+    color: "#fff", 
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+
+  // Títulos seguindo o padrão
+  titulo: { 
+    fontSize: 24, 
+    fontWeight: "bold", 
+    color: "#fff",
+    textAlign: "center",
+    marginBottom: 10,
+  },
+  descricao: { 
+    color: "#eee", 
+    marginBottom: 20,
+    textAlign: "center",
+    fontSize: 16,
+    lineHeight: 22,
+  },
+
+  // Progresso
+  progressContainer: {
+    width: "100%",
+    marginBottom: 25,
+  },
+  progressText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+    marginBottom: 8,
+    textAlign: "center",
+  },
   progressBar: {
-    height: 10,
-    backgroundColor: "#444",
-    borderRadius: 5,
-    marginVertical: 15,
+    height: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    borderRadius: 6,
+    overflow: "hidden",
   },
   progressFill: {
     height: "100%",
-    backgroundColor: "#C3073F",
-    borderRadius: 5,
+    backgroundColor: "#f7a000",
+    borderRadius: 6,
   },
+
+  // Cards dos pontos seguindo o padrão do Rotas.jsx
   pontoCard: {
-    backgroundColor: "#333",
-    borderRadius: 10,
-    padding: 15,
+    backgroundColor: "#c3073f",
+    borderRadius: 12,
+    padding: 20,
     marginBottom: 15,
+    width: "100%",
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
   checkboxContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 8,
+    marginBottom: 10,
   },
-  pontoNome: { fontSize: 16, color: "#fff", marginLeft: 8 },
-  completed: { textDecorationLine: "line-through", color: "#aaa" },
-  pontoDesc: { color: "#ccc", marginBottom: 8 },
+  pontoNome: { 
+    fontSize: 18, 
+    color: "#fff", 
+    marginLeft: 12,
+    fontWeight: "bold",
+    flex: 1,
+  },
+  completed: { 
+    textDecorationLine: "line-through", 
+    color: "#ccc",
+    opacity: 0.7,
+  },
+  pontoDesc: { 
+    color: "#eee", 
+    marginBottom: 15,
+    fontSize: 14,
+    lineHeight: 20,
+  },
   gpsButton: {
-    backgroundColor: "#C3073F",
-    padding: 10,
-    borderRadius: 6,
+    backgroundColor: "#f7a000",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
     alignItems: "center",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.22,
+    shadowRadius: 2.22,
   },
-  gpsText: { color: "#fff", fontWeight: "bold" },
+  gpsText: { 
+    color: "#fff", 
+    fontWeight: "bold",
+    fontSize: 16,
+  },
 });
