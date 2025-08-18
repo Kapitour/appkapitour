@@ -50,7 +50,9 @@
     "react-native-web-maps": "^0.3.0"
   },
   "devDependencies": {
-    "@types/react": "~19.0.10"
+    "@react-native/debugger-frontend": "^0.81.0",
+    "@types/react": "~19.0.10",
+    "typescript": "~5.8.3"
   },
   "private": true
 }
