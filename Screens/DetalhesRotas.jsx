@@ -235,6 +235,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 10,
+    fontSize: 25
   },
   pontoNome: { 
     fontSize: 18, 

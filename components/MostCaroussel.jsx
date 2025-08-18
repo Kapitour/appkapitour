@@ -104,6 +104,7 @@ const styles = StyleSheet.create({
   boxContent: {
     flex: 1,
     justifyContent: "space-between",
+    marginBottom: 12,
   },
   image: {
     width: "100%",

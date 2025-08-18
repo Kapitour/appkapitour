@@ -13,7 +13,7 @@ export default function Home() {
   return (
     <ScrollView showsVerticalScrollIndicator={false} style={styles.container}>
       <LinearGradient
-        colors={[,"#151c3b", "#c83349", "#f7a000"]} // The typo was here
+        colors={["#0f142c", "#c83349", "#f7a000"]}
         start={{ x: 3, y: 0 }}
         end={{ x: 5, y: 1 }}
         style={styles.containercolor}
