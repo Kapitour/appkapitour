@@ -162,6 +162,10 @@ const Loja = () => {
     return tipo ? tipo.nome : 'Categoria não encontrada';
   };
 
+  const obterValor = (valor) => {
+    return valor.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  };
+
   const renderItem = ({ item }) => {
     const quantidadeEstoque = verificarEstoque(item.id);
     const nomeTipo = obterNomeTipo(item.tipo_id);
@@ -177,7 +181,7 @@ const Loja = () => {
         <View style={styles.info}>
           <Text style={styles.title}>{item.nome}</Text>
           <Text style={styles.desc}>{item.descricao}</Text>
-          <Text style={styles.category}>Categoria: {nomeTipo}</Text>
+          <Text style={styles.price}>R$: {item.valor_unid}</Text>
           <Text style={styles.stock}>
             Estoque: {quantidadeEstoque > 0 ? `${quantidadeEstoque} unidades` : 'Indisponível'}
           </Text>
@@ -306,7 +310,7 @@ const Loja = () => {
                     {selectedProduct.descricao}
                   </Text>
                   <Text style={styles.modalText}>
-                    <Text style={styles.bold}>Categoria:</Text> {obterNomeTipo(selectedProduct.tipo_id)}
+                    <Text style={styles.bold}>R$ </Text> {obterValor(selectedProduct.valor_unid)}
                   </Text>
                   <Text style={styles.modalText}>
                     <Text style={styles.bold}>Estoque:</Text> {verificarEstoque(selectedProduct.id)} unidades
@@ -507,11 +511,11 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   // Estilos para categoria e estoque
-  category: {
-    color: "#ccc",
-    fontSize: 12,
+  price: {
+    color: "#ffffff",
+    fontSize: 20,
     marginVertical: 2,
-    fontStyle: "italic",
+    fontStyle: "bold",
   },
   stock: {
     color: "#fff",
