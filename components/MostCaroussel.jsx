@@ -61,30 +61,30 @@ const MostCaroussel = () => {
     fetchRotas();
   }, []);
 
-return (
-  <View>
-    <Text style={styles.texto}>Rotas mais realizadas:</Text>
-    <ScrollView horizontal={true} showsHorizontalScrollIndicator={false}>
-      {rotas.map((rota, index) => (
-        <LinearGradient
-          colors={["#c83349", "#f7a000"]}
-          start={{ x: 1, y: 1 }}
-          end={{ x: 0, y: 0 }}
-          style={styles.box}
-        >
-          {/* Lembre-se, a key deve ir aqui no LinearGradient */}
-          <View key={index} style={styles.boxContent}>
-            {/* Imagem */}
-            <Image source={{ uri: rota.imagem }} style={styles.image} />
+  return (
+    <View>
+      <Text style={styles.texto}>Rotas mais realizadas:</Text>
+      <ScrollView horizontal={true} showsHorizontalScrollIndicator={false}>
+        {rotas.map((rota, index) => (
+          <LinearGradient
+            colors={["#c83349", "#f7a000"]}
+            start={{ x: 1, y: 1 }}
+            end={{ x: 0, y: 0 }}
+            style={styles.box}
+          >
+            {/* Lembre-se, a key deve ir aqui no LinearGradient */}
+            <View key={index} style={styles.boxContent}>
+              {/* Imagem */}
+              <Image source={{ uri: rota.imagem }} style={styles.image} />
 
-            <Text style={styles.nome}>{rota.nome}</Text>
-          </View>
-        </LinearGradient>
-      ))}
-      {/* Missing closing parenthesis and brace for the map function */}
-    </ScrollView>
-  </View>
-);
+              <Text style={styles.nome}>{rota.nome}</Text>
+            </View>
+          </LinearGradient>
+        ))}
+        {/* Missing closing parenthesis and brace for the map function */}
+      </ScrollView>
+    </View>
+  );
 };
 
 export default MostCaroussel;
@@ -93,15 +93,15 @@ export default MostCaroussel;
 
 const styles = StyleSheet.create({
   box: {
-    borderTopRightRadius: 25,
-    borderBottomLeftRadius: 25,
+    borderBottomLeftRadius: 30,
+    borderTopRightRadius: 30,
+    borderTopLeftRadius: 30,
+    borderBottomRightRadius: 5,
     height: 200,
     width: 150,
     margin: 10,
     overflow: "hidden",
   },
-  boxContent: {},
-
   image: {
     width: "100%",
     height: "85%",

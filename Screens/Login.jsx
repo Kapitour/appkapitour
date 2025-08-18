@@ -43,8 +43,8 @@ const LoginScreen = () => {
   return (
     
       <LinearGradient
-                colors={["#c83349", "#f7a000"]}
-                start={{ x: 1, y: 0 }}
+                colors={["#0f142c","#c83349", "#f7a000"]}
+                start={{ x: 1.5, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.container}
               >

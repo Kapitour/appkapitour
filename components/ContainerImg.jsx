@@ -16,7 +16,7 @@ class ContainerImg extends Component {
         />
                 {/* Gradiente para transparência na parte inferior */}
         <LinearGradient
-          colors={["transparent", "#1a1a1d"]} // do topo transparente para a cor de fundo
+          colors={["transparent", "#0f142c"]} // do topo transparente para a cor de fundo
           style={styles.gradient}
         />
 

@@ -137,13 +137,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   title: {
-    backgroundColor: "#333333b5",
+    borderBottomColor:"#fff",
+    borderBottomWidth:2,
     color: "#fff",
     fontSize: 28,
     fontWeight: "bold",
-    padding: 15,
+    padding: 3,
     textAlign: "center",
-    borderRadius: 90,
     marginBottom: 20,
   },
   rowContainer: {

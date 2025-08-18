@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { supabase } from "../lib/supabase";
 import DetalhesRota from "./DetalhesRotas";
+import { LinearGradient } from "expo-linear-gradient";
 
 export default function Rotas() {
   const [rotas, setRotas] = useState([]);
@@ -37,27 +38,48 @@ export default function Rotas() {
     );
 
   return (
-    <ScrollView
-      style={{ backgroundColor: "#1a1a1d" }} // <- aqui
-      contentContainerStyle={styles.container}
+    // O GRADIENTE AGORA É O CONTAINER PRINCIPAL
+    <LinearGradient
+      colors={["#0f142c", "#c83349", "#f7a000"]}
+      start={{ x: 1.5, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.containerPrincipal} // NOVO ESTILO
     >
-      <Text style={styles.title}>Escolher Rotas Turísticas</Text>
-      {rotas.map((rota) => (
-        <TouchableOpacity
-          key={rota.id}
-          style={styles.card}
-          onPress={() => setRotaSelecionada(rota)}
-        >
-          <Text style={styles.nome}>{rota.nome}</Text>
-          <Text style={styles.desc}>{rota.descricao}</Text>
-        </TouchableOpacity>
-      ))}
-    </ScrollView>
+      <ScrollView
+        contentContainerStyle={styles.contentContainer} // NOVO ESTILO
+        style={styles.scroll}
+      >
+        <Text style={styles.title}>Escolher Rotas Turísticas</Text>
+        {rotas.map((rota) => (
+          <TouchableOpacity
+            key={rota.id}
+            style={styles.card}
+            onPress={() => setRotaSelecionada(rota)}
+          >
+            <Text style={styles.nome}>{rota.nome}</Text>
+            <Text style={styles.desc}>{rota.descricao}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 20, backgroundColor: "#1a1a1d" },
+  // ESTILO PARA O CONTAINER PRINCIPAL COM O GRADIENTE
+  containerPrincipal: {
+    flex: 1,
+  },
+  // A SCROLLVIEW AGORA TEM UM FUNDO TRANSPARENTE
+  scroll: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+  // ESTILO PARA O CONTEÚDO DENTRO DA SCROLLVIEW
+  contentContainer: {
+    padding: 20,
+    alignItems: "center",
+  },
   title: {
     fontSize: 22,
     fontWeight: "bold",
@@ -70,7 +92,15 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 12,
     marginBottom: 15,
+    width: "100%",
   },
-  nome: { fontSize: 18, fontWeight: "bold", color: "#fff" },
-  desc: { color: "#eee", marginTop: 5 },
+  nome: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#fff",
+  },
+  desc: {
+    color: "#eee",
+    marginTop: 5,
+  },
 });
