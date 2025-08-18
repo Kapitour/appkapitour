@@ -7,6 +7,7 @@ import {
   Image,
   Dimensions,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { supabase } from "../lib/supabase";
 
 const getMostUsedRoutes = async () => {
@@ -60,19 +61,30 @@ const MostCaroussel = () => {
     fetchRotas();
   }, []);
 
-  return (
-    <View>
-      <Text style={styles.texto}>Rotas mais realizadas:</Text>
-      <ScrollView horizontal={true} showsHorizontalScrollIndicator={false}>
-        {rotas.map((rota, index) => (
-          <View key={index} style={styles.box}>
+return (
+  <View>
+    <Text style={styles.texto}>Rotas mais realizadas:</Text>
+    <ScrollView horizontal={true} showsHorizontalScrollIndicator={false}>
+      {rotas.map((rota, index) => (
+        <LinearGradient
+          colors={["#c83349", "#f7a000"]}
+          start={{ x: 1, y: 1 }}
+          end={{ x: 0, y: 0 }}
+          style={styles.box}
+        >
+          {/* Lembre-se, a key deve ir aqui no LinearGradient */}
+          <View key={index} style={styles.boxContent}>
+            {/* Imagem */}
             <Image source={{ uri: rota.imagem }} style={styles.image} />
+
             <Text style={styles.nome}>{rota.nome}</Text>
           </View>
-        ))}
-      </ScrollView>
-    </View>
-  );
+        </LinearGradient>
+      ))}
+      {/* Missing closing parenthesis and brace for the map function */}
+    </ScrollView>
+  </View>
+);
 };
 
 export default MostCaroussel;
@@ -81,7 +93,6 @@ export default MostCaroussel;
 
 const styles = StyleSheet.create({
   box: {
-    backgroundColor: "#c83349",
     borderTopRightRadius: 25,
     borderBottomLeftRadius: 25,
     height: 200,
@@ -89,6 +100,8 @@ const styles = StyleSheet.create({
     margin: 10,
     overflow: "hidden",
   },
+  boxContent: {},
+
   image: {
     width: "100%",
     height: "85%",

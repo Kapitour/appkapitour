@@ -126,12 +126,16 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    borderStyle:'none',
     height: 90,
     backgroundColor: "white",
-    elevation: 10,
-    shadowOpacity: 0,
-    paddingBottom: 0,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    overflow: "hidden", // importante para o arredondamento funcionar
+    elevation: 5, // sombra Android
+    shadowColor: "#000", // sombra iOS
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
     borderTopWidth: 0,
   },
 });

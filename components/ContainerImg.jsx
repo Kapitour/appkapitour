@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 import { View, Image, Text, StyleSheet, Dimensions } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 
 const { width } = Dimensions.get("window");
 
@@ -12,6 +13,11 @@ class ContainerImg extends Component {
           style={styles.img1}
           source={require("../assets/BackgroundHeader.png")}
           resizeMode="cover"
+        />
+                {/* Gradiente para transparência na parte inferior */}
+        <LinearGradient
+          colors={["transparent", "#1a1a1d"]} // do topo transparente para a cor de fundo
+          style={styles.gradient}
         />
 
         {/* Conteúdo sobreposto */}
@@ -45,6 +51,14 @@ const styles = StyleSheet.create({
     height: "100%",
     zIndex: 0,
   },
+  gradient: {
+  position: "absolute",
+  bottom: 0,
+  left: 0,
+  right: 0,
+  height: 100, // altura do fade
+  zIndex: 1,   // acima da imagem de fundo
+},
   content: {
     zIndex: 1,
     alignItems: "center",

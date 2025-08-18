@@ -11,6 +11,7 @@ import {
 import Icon from "react-native-vector-icons/FontAwesome";
 import { useNavigation } from "@react-navigation/native";
 import logo from "../assets/Kapitour.png";
+import { LinearGradient } from "expo-linear-gradient";
 import { supabase } from "../lib/supabase";
 
 const LoginScreen = () => {
@@ -40,29 +41,35 @@ const LoginScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
+    
+      <LinearGradient
+                colors={["#c83349", "#f7a000"]}
+                start={{ x: 1, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.container}
+              >
       <Image source={logo} style={{ marginBottom: -250 }}></Image>
 
       <View style={styles.formBox}>
-        <Text style={styles.label}>Email:</Text>
         <TextInput
           style={styles.input}
-          placeholder="Digite seu email"
+          placeholder="Email"
           placeholderTextColor="#454140"
           autoCapitalize="none"
           keyboardType="email-address"
           value={email}
           onChangeText={setEmail}
+          textAlign="center"
         />
 
-        <Text style={styles.label}>Senha:</Text>
         <TextInput
           style={styles.input}
-          placeholder="Digite sua senha"
+          placeholder="Senha"
           placeholderTextColor="#454140"
           secureTextEntry
           value={senha}
           onChangeText={setSenha}
+          textAlign="center"
         />
 
         <TouchableOpacity style={styles.button} onPress={handleLogin}>
@@ -81,26 +88,27 @@ const LoginScreen = () => {
 
         <View style={styles.socialIcons}>
           <TouchableOpacity style={styles.iconButton}>
-            <Icon name="google" size={20} color="orange" />
+            <Icon name="google" size={20} color="#c83349" />
           </TouchableOpacity>
           <TouchableOpacity style={styles.iconButton}>
-            <Icon name="facebook" size={20} color="blue" />
+            <Icon name="facebook" size={20} color="#c83349" />
           </TouchableOpacity>
           <TouchableOpacity style={styles.iconButton}>
-            <Icon name="twitter" size={20} color="#b7d7e8" />
+            <Icon name="instagram" size={20} color="#c83349" />
           </TouchableOpacity>
         </View>
       </View>
-    </View>
+      </LinearGradient>
+
   );
 };
 
 export default LoginScreen;
 
 const styles = StyleSheet.create({
-  container: {
+
+  container:{
     flex: 1,
-    backgroundColor: "#1a1a1d",
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 20,
@@ -110,41 +118,37 @@ const styles = StyleSheet.create({
     padding: 10,
     width: "100%",
     maxWidth: 400,
-    shadowColor: "#000",
+    shadowColor: "#dfdfdf",
     shadowOpacity: 0.5,
     shadowOffset: { width: 0, height: 3 },
     elevation: 0,
     marginTop: 200,
   },
-  label: {
-    color: "#fff",
-    marginBottom: 5,
-    marginTop: 10,
-  },
   input: {
-    backgroundColor: "#333",
-    color: "#fff",
-    padding: 10,
+    backgroundColor: "#ffffff84",
+    color: "#000000cc",
+    padding: 20,
     borderRadius: 5,
     marginBottom: 15,
   },
   button: {
     backgroundColor: "#c83349",
-    padding: 12,
-    borderRadius: 5,
+    padding: 15,
+    borderRadius: 40,
     alignItems: "center",
-    marginTop: 40,
+    marginTop: 10,
   },
   buttonText: {
     color: "#fff",
     fontWeight: "bold",
     textTransform: "uppercase",
+    fontSize: 20,
   },
   cadastroText: {
-    color: "yellow",
+    color: "#fff",
     marginTop: 15,
     textAlign: "center",
-    fontWeight: "bold",
+    fontSize:20
   },
   divider: {
     flexDirection: "row",
@@ -168,10 +172,10 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   iconButton: {
-    backgroundColor: "#fff",
+    backgroundColor: "#ffffffa2",
     width: 70,
     height: 40,
-    borderRadius: 20,
+    borderRadius: 99,
     justifyContent: "center",
     alignItems: "center",
     marginHorizontal: 5,
