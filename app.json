@@ -1,25 +1,26 @@
 {
-  "android": {
-    "package": "com.barralbruno.kapitest",
-    "adaptiveIcon": {
-          "foregroundImage": "./assets/adaptive-icon.png",
-          "backgroundColor": "#ffffff"
-        }
-  },
-  "extra": {
-    "eas": {
-      "projectId": "31953773-dd59-4e17-8456-752f2924985e"
+  "expo": {
+    "name": "Kapitour",
+    "slug": "kapitest",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
     },
-    "expo": {
-      "name": "Kapitour",
-      "slug": "appkapitour",
-      "icon": "./assets/icon.png",
-      "splash": {
-        "image": "./assets/splash-icon.png",
-        "resizeMode": "contain",
+    "favicon": "./assets/favicon.png",
+    "android": {
+      "package": "com.barralbruno.kapitest",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      },
-      "favicon": "./assets/favicon.png"
-    }
+      }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "31953773-dd59-4e17-8456-752f2924985e"
+      }
+    },
+    "owner": "barralbruno"
   }
 }

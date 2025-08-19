@@ -12,6 +12,7 @@ import {
 import { supabase } from "../lib/supabase";
 import { useNavigation } from "@react-navigation/native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 
 const AreaUsuario = () => {
   const [user, setUser] = useState(null);
@@ -68,14 +69,21 @@ const AreaUsuario = () => {
   );
 
   return (
+    <LinearGradient
+                    colors={["#c83349", "#f7a000"]}
+                    start={{ x: 1.5, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.containerBack}
+                  >
     <ScrollView style={styles.container}>
-      <ImageBackground
-        source={require("../assets/BackgroundHeader.png")} // Imagem de fundo do header
-        style={styles.header}
-        resizeMode="cover"
-      >
+
+        <TouchableOpacity style={styles.button} onPress={handleLogout}>
+          <MaterialCommunityIcons name="logout" size={20} color="#000000ff" />
+          <Text style={styles.buttonText}>Sair</Text>
+        </TouchableOpacity>
+
         <Text style={styles.headerTitle}>Área do Usuário</Text>
-      </ImageBackground>
+  
 
       <View style={styles.content}>
         {user ? (
@@ -102,12 +110,13 @@ const AreaUsuario = () => {
           <Text style={styles.loadingText}>Carregando dados do usuário...</Text>
         )}
 
-        <TouchableOpacity style={styles.button} onPress={handleLogout}>
-          <MaterialCommunityIcons name="logout" size={20} color="#fff" />
-          <Text style={styles.buttonText}>Sair</Text>
+        <TouchableOpacity style={styles.cupom}>
+          <Text style={styles.cupomtext}>Meus Cupons</Text>
         </TouchableOpacity>
+
       </View>
     </ScrollView>
+    </LinearGradient>
   );
 };
 
@@ -116,15 +125,21 @@ export default AreaUsuario;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f1f1f1",
+    backgroundColor: "transparent",
+  },
+  containerBack:{
+    flex:1,
   },
   header: {
     height: 150,
-    justifyContent: "center",
-    alignItems: "center",
+    
     paddingTop: 40,
   },
   headerTitle: {
+    height: 150,
+    paddingTop: 40,
+    justifyContent: "center",
+    textAlign: "center",
     fontSize: 28,
     fontWeight: "bold",
     color: "#fff",
@@ -137,21 +152,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   card: {
-    backgroundColor: "#fff",
+    
     borderRadius: 15,
     padding: 25,
     width: "100%",
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
     marginBottom: 30,
   },
   infoRow: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 20,
+    color:"#fff"
   },
   icon: {
     marginRight: 15,
@@ -159,30 +170,32 @@ const styles = StyleSheet.create({
   infoLabel: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#555",
+    color: "#ffffffff",
     width: 80,
   },
   infoValue: {
     fontSize: 16,
-    color: "#333",
+    color: "#ffffffff",
     flex: 1,
   },
   button: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#E53935",
+    justifyContent:"center",
+    flexDirection:"row",
+    backgroundColor: "#ffffffff",
+    paddingHorizontal: 20,
     paddingVertical: 12,
-    paddingHorizontal: 30,
-    borderRadius: 25,
+    borderRadius: 12,
+    marginTop:30,
+    marginLeft:15,
+    alignSelf: "flex-start",
     elevation: 3,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
   buttonText: {
-    color: "#fff",
+    color: "#000000ff",
     fontSize: 16,
     fontWeight: "bold",
     marginLeft: 10,
@@ -192,4 +205,27 @@ const styles = StyleSheet.create({
     color: "#555",
     marginTop: 50,
   },
+
+  cupom:{
+    justifyContent:"center",
+    flexDirection:"row",
+    backgroundColor: "#ffffffff",
+    paddingHorizontal: 100,
+    paddingVertical: 20,
+    borderRadius: 12,
+    marginTop:30,
+    marginLeft:15,
+    alignSelf: "center",
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  cupomtext:{
+    justifyContent:"center",
+    flexDirection:"row",
+    fontSize:20,
+    textAlign: "center"
+  }
 });
