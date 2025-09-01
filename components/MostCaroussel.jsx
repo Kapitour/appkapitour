@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Image,
   Dimensions,
+  TouchableOpacity,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { supabase } from "../lib/supabase";
@@ -39,6 +40,7 @@ const getMostUsedRoutes = async () => {
       if (pontoError || !ponto?.url_img) return null;
 
       return {
+        id: rota.id,
         nome: rota.nome,
         imagem: ponto.url_img,
       };
@@ -49,7 +51,7 @@ const getMostUsedRoutes = async () => {
   return rotasComImagem.filter((r) => r !== null);
 };
 
-const MostCaroussel = () => {
+const MostCaroussel = ({ onRotaPress }) => {
   const [rotas, setRotas] = useState([]);
 
   useEffect(() => {
@@ -61,26 +63,36 @@ const MostCaroussel = () => {
     fetchRotas();
   }, []);
 
+  const handleRotaPress = (rota) => {
+    if (onRotaPress) {
+      onRotaPress(rota);
+    }
+  };
+
   return (
     <View>
       <Text style={styles.texto}>Rotas mais realizadas:</Text>
       <ScrollView horizontal={true} showsHorizontalScrollIndicator={false}>
         {rotas.map((rota, index) => (
-          <LinearGradient
+          <TouchableOpacity
             key={index}
-            colors={["#c83349", "#f7a000"]}
-            start={{ x: 1, y: 1 }}
-            end={{ x: 0, y: 0 }}
-            style={styles.box}
+            onPress={() => handleRotaPress(rota)}
+            activeOpacity={0.8}
           >
-            <View style={styles.boxContent}>
-              {/* Imagem */}
-              <Image source={{ uri: rota.imagem }} style={styles.image} />
-              <Text style={styles.nome}>{rota.nome}</Text>
-            </View>
-          </LinearGradient>
+            <LinearGradient
+              colors={["#c83349", "#f7a000"]}
+              start={{ x: 1, y: 1 }}
+              end={{ x: 0, y: 0 }}
+              style={styles.box}
+            >
+              <View style={styles.boxContent}>
+                {/* Imagem */}
+                <Image source={{ uri: rota.imagem }} style={styles.image} />
+                <Text style={styles.nome}>{rota.nome}</Text>
+              </View>
+            </LinearGradient>
+          </TouchableOpacity>
         ))}
-        {/* Missing closing parenthesis and brace for the map function */}
       </ScrollView>
     </View>
   );

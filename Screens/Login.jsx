@@ -6,18 +6,23 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
   Image,
 } from "react-native";
-import Icon from "react-native-vector-icons/FontAwesome";
+import { FontAwesome } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import logo from "../assets/Kapitour.png";
 import { LinearGradient } from "expo-linear-gradient";
-import { supabase } from "../lib/supabase";
+import { useAuth } from "../contexts/AuthContext";
 
 const LoginScreen = () => {
   const navigation = useNavigation();
+  const { signIn } = useAuth();
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
     if (!email || !senha) {
@@ -25,29 +30,32 @@ const LoginScreen = () => {
       return;
     }
 
-    const { error, data } = await supabase.auth.signInWithPassword({
-      email: email.trim().toLowerCase(),
-      password: senha,
-    });
-
-    if (error) {
-      Alert.alert("Erro no login", error.message);
-    } else {
-      navigation.reset({
-        index: 0,
-        routes: [{ name: "AreaUsuario" }],
-      });
+    setLoading(true);
+    
+    try {
+      const result = await signIn(email, senha);
+      
+      if (result.success) {
+        // Login bem-sucedido - o contexto de autenticação irá automaticamente
+        // redirecionar para a tela principal
+        console.log("Login realizado com sucesso!");
+      } else {
+        Alert.alert("Erro no login", result.error);
+      }
+    } catch (error) {
+      Alert.alert("Erro no login", "Ocorreu um erro inesperado.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    
-      <LinearGradient
-                colors={["#c83349", "#f7a000"]}
-                start={{ x: 1.5, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.container}
-              >
+    <LinearGradient
+      colors={["#c83349", "#0f142c"]}
+      start={{ x: 1.5, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.container}
+    >
       <Image source={logo} style={{ marginBottom: -250 }}></Image>
 
       <View style={styles.formBox}>
@@ -60,6 +68,7 @@ const LoginScreen = () => {
           value={email}
           onChangeText={setEmail}
           textAlign="center"
+          editable={!loading}
         />
 
         <TextInput
@@ -70,13 +79,23 @@ const LoginScreen = () => {
           value={senha}
           onChangeText={setSenha}
           textAlign="center"
+          editable={!loading}
         />
 
-        <TouchableOpacity style={styles.button} onPress={handleLogin}>
-          <Text style={styles.buttonText}>Login</Text>
+        <TouchableOpacity 
+          style={[styles.button, loading && styles.buttonDisabled]} 
+          onPress={handleLogin}
+          disabled={loading}
+        >
+          <Text style={styles.buttonText}>
+            {loading ? "Entrando..." : "Login"}
+          </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => navigation.navigate("Cadastro")}>
+        <TouchableOpacity 
+          onPress={() => navigation.navigate("Cadastro")}
+          disabled={loading}
+        >
           <Text style={styles.cadastroText}>Cadastrar-se</Text>
         </TouchableOpacity>
 
@@ -88,26 +107,24 @@ const LoginScreen = () => {
 
         <View style={styles.socialIcons}>
           <TouchableOpacity style={styles.iconButton}>
-            <Icon name="google" size={20} color="#c83349" />
+            <FontAwesome name="google" size={20} color="#c83349" />
           </TouchableOpacity>
           <TouchableOpacity style={styles.iconButton}>
-            <Icon name="facebook" size={20} color="#c83349" />
+            <FontAwesome name="facebook" size={20} color="#c83349" />
           </TouchableOpacity>
           <TouchableOpacity style={styles.iconButton}>
-            <Icon name="instagram" size={20} color="#c83349" />
+            <FontAwesome name="instagram" size={20} color="#c83349" />
           </TouchableOpacity>
         </View>
       </View>
-      </LinearGradient>
-
+    </LinearGradient>
   );
 };
 
 export default LoginScreen;
 
 const styles = StyleSheet.create({
-
-  container:{
+  container: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
@@ -138,6 +155,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 10,
   },
+  buttonDisabled: {
+    backgroundColor: "#cccccc",
+  },
   buttonText: {
     color: "#fff",
     fontWeight: "bold",
@@ -148,7 +168,7 @@ const styles = StyleSheet.create({
     color: "#fff",
     marginTop: 15,
     textAlign: "center",
-    fontSize:20
+    fontSize: 20,
   },
   divider: {
     flexDirection: "row",

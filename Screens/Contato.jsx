@@ -4,14 +4,17 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  Linking,
   StyleSheet,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
+  Linking,
   Image,
 } from "react-native";
 import fundo from "../assets/contatoFundo.png";
 import { LinearGradient } from "expo-linear-gradient";
-import Icon from "react-native-vector-icons/FontAwesome";
+import { FontAwesome } from "@expo/vector-icons";
 
 export default function Contato() {
   const [showForm, setShowForm] = useState(false);
@@ -28,7 +31,7 @@ export default function Contato() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <LinearGradient
-        colors={["#c83349", "#f7a000"]}
+        colors={["#c83349", "#0f142c"]}
         start={{ x: 1, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.containerColor}
@@ -42,7 +45,7 @@ export default function Contato() {
             onPress={() => handleLinkPress("tel:+5521983581550")}
           >
             <View style={styles.iconCircle}>
-              <Icon name="phone" size={20} color="#fff" />
+              <FontAwesome name="phone" size={20} color="#fff" />
             </View>
             <Text style={styles.contactText}>(21) 98358-1550</Text>
           </TouchableOpacity>
@@ -55,7 +58,7 @@ export default function Contato() {
             }
           >
             <View style={styles.iconCircle}>
-              <Icon name="envelope" size={20} color="#fff" />
+              <FontAwesome name="envelope" size={20} color="#fff" />
             </View>
             <Text style={styles.contactText}>Nosso email</Text>
           </TouchableOpacity>
@@ -68,7 +71,7 @@ export default function Contato() {
             }
           >
             <View style={styles.iconCircle}>
-              <Icon name="instagram" size={20} color="#fff" />
+              <FontAwesome name="instagram" size={20} color="#fff" />
             </View>
             <Text style={styles.contactText}>@kapi.tour</Text>
           </TouchableOpacity>
@@ -80,7 +83,7 @@ export default function Contato() {
               onPress={() => setShowForm(true)}
             >
               <View style={styles.iconCircle}>
-                <Icon name="comment" size={20} color="#fff" />
+                <FontAwesome name="comment" size={20} color="#fff" />
               </View>
               <Text style={styles.contactText}>Enviar uma mensagem</Text>
             </TouchableOpacity>

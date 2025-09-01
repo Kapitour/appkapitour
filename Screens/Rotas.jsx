@@ -40,7 +40,7 @@ export default function Rotas() {
   return (
     // O GRADIENTE AGORA É O CONTAINER PRINCIPAL
     <LinearGradient
-      colors={[ "#c83349", "#f7a000"]}
+      colors={[ "#c83349", "#0f142c"]}
       start={{ x: 1.5, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={styles.containerPrincipal} // NOVO ESTILO
@@ -55,7 +55,8 @@ export default function Rotas() {
             key={rota.id}
             style={styles.card}
             onPress={() => setRotaSelecionada(rota)}
-          >
+            >
+            <Text style={styles.nome}>{rota.img}</Text>
             <Text style={styles.nome}>{rota.nome}</Text>
             <Text style={styles.desc}>{rota.descricao}</Text>
           </TouchableOpacity>

@@ -4,16 +4,16 @@
     "slug": "kapitest",
     "icon": "./assets/icon.png",
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/Kapitour.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#c83349"
     },
     "favicon": "./assets/favicon.png",
     "android": {
       "package": "com.barralbruno.kapitest",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#c83349"
       }
     },
     "extra": {
@@ -21,6 +21,9 @@
         "projectId": "31953773-dd59-4e17-8456-752f2924985e"
       }
     },
-    "owner": "barralbruno"
+    "owner": "barralbruno",
+    "plugins": [
+      "expo-maps"
+    ]
   }
 }

@@ -202,7 +202,7 @@ const Loja = () => {
   if (loading) {
     return (
       <LinearGradient
-        colors={["#0f142c", "#c83349", "#f7a000"]}
+        colors={["#c83349", "#0f142c"]}
         start={{ x: 1.5, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.containerPrincipal}
@@ -217,7 +217,7 @@ const Loja = () => {
 
   return (
     <LinearGradient
-      colors={["#0f142c", "#c83349", "#f7a000"]}
+      colors={["#c83349", "#0f142c"]}
       start={{ x: 1.5, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={styles.containerPrincipal}

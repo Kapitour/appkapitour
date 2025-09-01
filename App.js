@@ -5,8 +5,9 @@ import { StatusBar } from "expo-status-bar";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { StyleSheet } from "react-native";
-import Icon from "react-native-vector-icons/Ionicons";
+import { StyleSheet, View, ActivityIndicator } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
 
 // Telas
 import Home from "./Screens/Home";
@@ -16,23 +17,35 @@ import Loja from "./Screens/Loja";
 import Contato from "./Screens/Contato";
 import Cadastro from "./Screens/Cadastro";
 import AreaUsuario from "./Screens/AreaUsuario";
+import LeitorQR from "./Screens/LeitorQR";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
-// Stack de autenticação
+// Stack de autenticação (apenas para usuários não logados)
 function AuthStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Login" component={Login} />
       <Stack.Screen name="Cadastro" component={Cadastro} />
-      <Stack.Screen name="AreaUsuario" component={AreaUsuario} />
+    </Stack.Navigator>
+  );
+}
+
+// Stack principal com todas as telas
+function MainStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="MainTabs" component={MainTabs} />
+      <Stack.Screen name="LeitorQR" component={LeitorQR} />
     </Stack.Navigator>
   );
 }
 
 // Tabs principais
 function MainTabs() {
+  const { user } = useAuth();
+
   return (
     <Tab.Navigator
       screenOptions={{
@@ -52,16 +65,16 @@ function MainTabs() {
         component={Home}
         options={{
           tabBarIcon: ({ color }) => (
-            <Icon name="home-outline" color={color} size={28} />
+            <Ionicons name="home-outline" color={color} size={28} />
           ),
         }}
       />
       <Tab.Screen
         name="Conta"
-        component={AuthStack}
+        component={user ? AreaUsuario : AuthStack}
         options={{
           tabBarIcon: ({ color }) => (
-            <Icon name="person-outline" color={color} size={28} />
+            <Ionicons name="person-outline" color={color} size={28} />
           ),
         }}
       />
@@ -70,7 +83,7 @@ function MainTabs() {
         component={Rotas}
         options={{
           tabBarIcon: ({ color }) => (
-            <Icon name="navigate-outline" color={color} size={28} />
+            <Ionicons name="navigate-outline" color={color} size={28} />
           ),
         }}
       />
@@ -79,7 +92,7 @@ function MainTabs() {
         component={Loja}
         options={{
           tabBarIcon: ({ color }) => (
-            <Icon name="cart-outline" color={color} size={28} />
+            <Ionicons name="cart-outline" color={color} size={28} />
           ),
         }}
       />
@@ -88,11 +101,37 @@ function MainTabs() {
         component={Contato}
         options={{
           tabBarIcon: ({ color }) => (
-            <Icon name="call-outline" color={color} size={28} />
+            <Ionicons name="call-outline" color={color} size={28} />
           ),
         }}
       />
     </Tab.Navigator>
+  );
+}
+
+// Componente de navegação principal
+function NavigationContent() {
+  const { user, loading } = useAuth();
+
+  // Tela de loading enquanto verifica autenticação
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#c83349" />
+      </View>
+    );
+  }
+
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      {user ? (
+        // Usuário logado - mostrar stack principal com tabs
+        <Stack.Screen name="Main" component={MainStack} />
+      ) : (
+        // Usuário não logado - mostrar stack de autenticação
+        <Stack.Screen name="Auth" component={AuthStack} />
+      )}
+    </Stack.Navigator>
   );
 }
 
@@ -111,16 +150,22 @@ export default function App() {
   }, []);
 
   return (
-    <NavigationContainer>
-      <StatusBar hidden />
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="Tabs" component={MainTabs} />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <AuthProvider>
+      <NavigationContainer>
+        <StatusBar hidden />
+        <NavigationContent />
+      </NavigationContainer>
+    </AuthProvider>
   );
 }
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#fff",
+  },
   tabBar: {
     position: "absolute",
     bottom: 0,

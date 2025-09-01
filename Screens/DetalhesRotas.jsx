@@ -11,6 +11,7 @@ import {
 import { supabase } from "../lib/supabase";
 import { LinearGradient } from "expo-linear-gradient";
 import Checkbox from "expo-checkbox";
+import { salvarProgressoRota, carregarProgressoRota, limparProgressoRota } from "../utils/progressManager";
 
 export default function DetalhesRota({ rota, voltar }) {
   const [pontos, setPontos] = useState([]);
@@ -40,7 +41,18 @@ export default function DetalhesRota({ rota, voltar }) {
       if (errorPontos) {
         console.error("Erro pontos_turisticos:", errorPontos);
       } else {
-        setPontos(pontosData.map((p) => ({ ...p, completed: false })));
+        // Carregar progresso salvo
+        const progressoSalvo = await carregarProgressoRota(rota.id);
+        
+        const pontosComProgresso = pontosData.map((p) => {
+          const pontoSalvo = progressoSalvo?.find(ps => ps.id === p.id);
+          return {
+            ...p,
+            completed: pontoSalvo ? pontoSalvo.completed : false
+          };
+        });
+        
+        setPontos(pontosComProgresso);
       }
 
       setLoading(false);
@@ -49,10 +61,25 @@ export default function DetalhesRota({ rota, voltar }) {
     fetchPontosDaRota();
   }, [rota.id]);
 
-  const toggleCheckbox = (index) => {
+  const toggleCheckbox = async (index) => {
     const updated = [...pontos];
     updated[index].completed = !updated[index].completed;
     setPontos(updated);
+    
+    // Salvar progresso automaticamente quando uma checkbox é alterada
+    await salvarProgressoRota(rota.id, updated);
+  };
+
+  const resetarProgresso = async () => {
+    const pontosResetados = pontos.map(p => ({ ...p, completed: false }));
+    setPontos(pontosResetados);
+    await salvarProgressoRota(rota.id, pontosResetados);
+  };
+
+  const limparProgresso = async () => {
+    await limparProgressoRota(rota.id);
+    const pontosResetados = pontos.map(p => ({ ...p, completed: false }));
+    setPontos(pontosResetados);
   };
 
   const progresso = pontos.length
@@ -77,7 +104,7 @@ export default function DetalhesRota({ rota, voltar }) {
 
   return (
     <LinearGradient
-      colors={["#0f142c", "#c83349", "#f7a000"]}
+      colors={["#c83349", "#0f142c"]}
       start={{ x: 1.5, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={styles.containerPrincipal}
@@ -100,6 +127,22 @@ export default function DetalhesRota({ rota, voltar }) {
           <View style={styles.progressBar}>
             <View style={[styles.progressFill, { width: `${progresso}%` }]} />
           </View>
+          {progresso > 0 && (
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity
+                onPress={resetarProgresso}
+                style={styles.resetButton}
+              >
+                <Text style={styles.resetText}>🔄 Resetar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={limparProgresso}
+                style={styles.clearButton}
+              >
+                <Text style={styles.clearText}>🗑️ Limpar Histórico</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
 
         {pontos.map((p, i) => (
@@ -216,6 +259,47 @@ const styles = StyleSheet.create({
     height: "100%",
     backgroundColor: "#f7a000",
     borderRadius: 6,
+  },
+  resetButton: {
+    backgroundColor: "#c3073f",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: "center",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.22,
+    shadowRadius: 2.22,
+    marginTop: 10,
+  },
+  resetText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+    marginTop: 10,
+  },
+  clearButton: {
+    backgroundColor: '#c3073f',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.22,
+    shadowRadius: 2.22,
+  },
+  clearText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 
   // Cards dos pontos seguindo o padrão do Rotas.jsx

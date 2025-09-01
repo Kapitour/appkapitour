@@ -5,11 +5,31 @@ import MostCaroussel from "../components/MostCaroussel";
 import Map from "../components/Map";
 import Categories from "../components/Categories";
 import Partiners from "../components/Partiners";
+import DetalhesRota from "./DetalhesRotas";
 import { LinearGradient } from "expo-linear-gradient";
+
+
 
 export default function Home() {
   const [categoriaId, setCategoriaId] = useState(null);
+  const [rotaSelecionada, setRotaSelecionada] = useState(null);
 
+  const handleRotaPress = (rota) => {
+    setRotaSelecionada(rota);
+  };
+
+  //--------------- lOGICA PARA ABRIR A ROTA SE SELECIONADA -------------------------------
+  if (rotaSelecionada) {
+    return (
+      <DetalhesRota
+        rota={rotaSelecionada}
+        voltar={() => setRotaSelecionada(null)}
+      />
+    );
+  }
+
+
+//-------------------------------------- RETURN ------------------------------------------  
   return (
     <ScrollView showsVerticalScrollIndicator={false} style={styles.container}>
       <LinearGradient
@@ -31,7 +51,7 @@ export default function Home() {
               proporcionar
             </Text>
           </LinearGradient>
-          <MostCaroussel />
+          <MostCaroussel onRotaPress={handleRotaPress} />
           <Categories onSelectCategoria={setCategoriaId} />
           <Map categoriaId={categoriaId} />
         </View>
@@ -41,6 +61,8 @@ export default function Home() {
     </ScrollView>
   );
 }
+
+//--------------------------------------------- CSS ------------------------------------------
 
 const styles = StyleSheet.create({
   container: {
