@@ -1,4 +1,3 @@
-// src/screens/AreaUsuario.jsx
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -9,6 +8,7 @@ import {
   ScrollView,
   Modal,
   Dimensions,
+  TextInput,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -18,7 +18,8 @@ import QRCode from "react-native-qrcode-svg";
 import { 
   buscarCuponsDisponiveis, 
   buscarCuponsResgatados,
-  buscarHistoricoResgates 
+  buscarHistoricoResgates,
+  atualizarUsuario 
 } from "../utils/cupomManager";
 
 const AreaUsuario = () => {
@@ -26,9 +27,53 @@ const AreaUsuario = () => {
   const { userInfo, signOut } = useAuth();
   const [showQRCode, setShowQRCode] = useState(false);
   const [showCupons, setShowCupons] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [cuponsDisponiveis, setCuponsDisponiveis] = useState([]);
   const [cuponsResgatados, setCuponsResgatados] = useState([]);
   const [loadingCupons, setLoadingCupons] = useState(false);
+  const [nome, setNome] = useState(userInfo?.nome);
+  const [email, setEmail] = useState(userInfo?.email);
+  const [cpf, setCpf] = useState(userInfo?.cpf);
+  const [sexo, setSexo] = useState(userInfo?.sexo);
+
+  useEffect(() => {
+    fetchUserInfo();
+  }, []);
+
+  const fetchUserInfo = async () => {
+    if (!userInfo || !userInfo.id) {
+      Alert.alert('Erro', 'Usuário não autenticado.');
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('usuarios')
+        .select('*')
+        .eq('id', userInfo.id);
+
+      if (error) {
+        console.error('Erro ao buscar informações do usuário:', error);
+        Alert.alert('Erro', 'Não foi possível buscar as informações do usuário.');
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        Alert.alert('Erro', 'Nenhum usuário encontrado.');
+        return;
+      }
+
+      // Atualize os estados com as informações do usuário
+      const user = data[0];
+      setNome(user.nome);
+      setEmail(user.email);
+      setCpf(user.cpf);
+      setSexo(user.sexo);
+    } catch (err) {
+      console.error('Erro inesperado:', err);
+      Alert.alert('Erro', 'Ocorreu um erro inesperado.');
+    }
+  };
 
   useEffect(() => {
     if (userInfo?.tipo_usuario_id === 2) {
@@ -41,7 +86,6 @@ const AreaUsuario = () => {
   const fetchCupons = async () => {
     try {
       setLoadingCupons(true);
-      
       const [cuponsResult, resgatadosResult] = await Promise.all([
         buscarCuponsDisponiveis(userInfo.id),
         buscarCuponsResgatados(userInfo.id)
@@ -65,9 +109,7 @@ const AreaUsuario = () => {
   const fetchHistoricoResgates = async () => {
     try {
       setLoadingCupons(true);
-      
       const historicoResult = await buscarHistoricoResgates(userInfo.id);
-      
       if (historicoResult.success) {
         setCuponsResgatados(historicoResult.data);
       }
@@ -165,6 +207,81 @@ const AreaUsuario = () => {
     );
   };
 
+  const handleUpdateUser = async () => {
+    const updatedUser = {
+      nome,
+      email,
+      cpf,
+      sexo,
+    };
+    
+    try {
+      const result = await atualizarUsuario(userInfo.id, updatedUser);
+      if (result.success) {
+        Alert.alert("Sucesso", "Dados atualizados com sucesso!");
+        setShowEditModal(false);
+      } else {
+        Alert.alert("Erro", result.error);
+      }
+    } catch (error) {
+      console.error("Erro ao atualizar usuário:", error);
+      Alert.alert("Erro", "Ocorreu um erro ao atualizar os dados.");
+    }
+  };
+
+  const renderEditModal = () => (
+    <Modal
+      visible={showEditModal}
+      animationType="slide"
+      transparent={true}
+      onRequestClose={() => setShowEditModal(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Editar Cadastro</Text>
+            <TouchableOpacity 
+              onPress={() => setShowEditModal(false)}
+              style={styles.closeButton}
+            >
+              <MaterialCommunityIcons name="close" size={24} color="#333" />
+            </TouchableOpacity>
+          </View>
+
+          <TextInput
+            style={styles.input}
+            placeholder="Nome"
+            value={nome}
+            onChangeText={setNome}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="CPF"
+            value={cpf}
+            onChangeText={setCpf}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Sexo"
+            value={sexo}
+            onChangeText={setSexo}
+          />
+
+          <TouchableOpacity style={styles.button} onPress={handleUpdateUser}>
+            <Text style={styles.buttonText}>Salvar</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+
   const renderCuponsModal = () => (
     <Modal
       visible={showCupons}
@@ -183,73 +300,23 @@ const AreaUsuario = () => {
               <MaterialCommunityIcons name="close" size={24} color="#333" />
             </TouchableOpacity>
           </View>
-
           <ScrollView style={styles.modalBody}>
-            {/* Cupons Disponíveis (apenas para parceiros) */}
-            {userInfo?.tipo_usuario_id === 2 && (
-              <View style={styles.cuponsSection}>
-                <Text style={styles.sectionTitle}>Cupons Disponíveis</Text>
-                {loadingCupons ? (
-                  <Text style={styles.loadingText}>Carregando...</Text>
-                ) : cuponsDisponiveis.length > 0 ? (
-                  cuponsDisponiveis.map((cupom) => (
-                    <View key={cupom.id} style={styles.cupomCard}>
-                      <Text style={styles.cupomNome}>{cupom.campanha?.nome}</Text>
-                      <Text style={styles.cupomDescricao}>{cupom.descricao}</Text>
-                      <Text style={styles.cupomQuantidade}>
-                        Disponível: {cupom.quantidade_disponivel}
-                      </Text>
-                      <Text style={styles.cupomValidade}>
-                        Válido até: {new Date(cupom.data_validade).toLocaleDateString('pt-BR')}
-                      </Text>
-                    </View>
-                  ))
-                ) : (
-                  <Text style={styles.noCuponsText}>Nenhum cupom disponível</Text>
-                )}
-              </View>
+            {loadingCupons ? (
+              <Text style={styles.loadingText}>Carregando...</Text>
+            ) : cuponsResgatados.length > 0 ? (
+              cuponsResgatados.map((resgate) => (
+                <View key={resgate.id} style={styles.resgateCard}>
+                  <Text style={styles.resgateCampanha}>
+                    {resgate.cupom?.campanha?.nome || `Cupom ${resgate.cupom_id}`}
+                  </Text>
+                  <Text style={styles.resgateData}>
+                    Resgatado em: {new Date(resgate.data_resgate).toLocaleDateString('pt-BR')}
+                  </Text>
+                </View>
+              ))
+            ) : (
+              <Text style={styles.noCuponsText}>Nenhum cupom resgatado ainda</Text>
             )}
-
-            {/* Cupons Resgatados */}
-            <View style={styles.cuponsSection}>
-              <Text style={styles.sectionTitle}>
-                {userInfo?.tipo_usuario_id === 2 ? 'Cupons Resgatados' : 'Meus Cupons Resgatados'}
-              </Text>
-              {loadingCupons ? (
-                <Text style={styles.loadingText}>Carregando...</Text>
-              ) : cuponsResgatados.length > 0 ? (
-                cuponsResgatados.map((resgate) => (
-                  <View key={resgate.id} style={styles.resgateCard}>
-                    {userInfo?.tipo_usuario_id === 2 ? (
-                      <>
-                        <Text style={styles.resgateCampanha}>
-                          {resgate.cupom?.campanha?.nome || `Cupom ${resgate.cupom_id}`}
-                        </Text>
-                        <Text style={styles.resgateUsuario}>
-                          Usuário: {resgate.usuario?.nome}
-                        </Text>
-                      </>
-                    ) : (
-                      <>
-                        <Text style={styles.resgateCampanha}>
-                          {resgate.cupom?.campanha?.nome || `Cupom ${resgate.cupom_id}`}
-                        </Text>
-                        <Text style={styles.resgateParceiro}>
-                          Parceiro: {resgate.cupom?.parceiro?.nome || 'N/A'}
-                        </Text>
-                      </>
-                    )}
-                    <Text style={styles.resgateData}>
-                      Resgatado em: {new Date(resgate.data_resgate).toLocaleDateString('pt-BR')}
-                    </Text>
-                  </View>
-                ))
-              ) : (
-                <Text style={styles.noCuponsText}>
-                  {userInfo?.tipo_usuario_id === 2 ? 'Nenhum cupom resgatado' : 'Nenhum cupom resgatado ainda'}
-                </Text>
-              )}
-            </View>
           </ScrollView>
         </View>
       </View>
@@ -282,12 +349,9 @@ const AreaUsuario = () => {
               color="#000"
               backgroundColor="#fff"
             />
-            r
-
             <Text style={styles.qrCodeInfo}>
               Nome: {userInfo?.nome}
             </Text>
-
           </View>
         </View>
       </View>
@@ -342,6 +406,13 @@ const AreaUsuario = () => {
                 label="Tipo de Usuário"
                 value={getTipoUsuarioText(userInfo.tipo_usuario_id)}
               />
+              <TouchableOpacity 
+                style={styles.editButton}
+                onPress={() => setShowEditModal(true)}
+              >
+                <MaterialCommunityIcons name="pencil" size={20} color="#333" />
+                <Text style={styles.buttonText}>Editar</Text>
+              </TouchableOpacity>
             </View>
           ) : (
             <Text style={styles.loadingText}>Carregando dados do usuário...</Text>
@@ -366,11 +437,10 @@ const AreaUsuario = () => {
       {/* Modais */}
       {renderCuponsModal()}
       {renderQRCodeModal()}
+      {renderEditModal()}
     </LinearGradient>
   );
 };
-
-export default AreaUsuario;
 
 const styles = StyleSheet.create({
   container: {
@@ -380,13 +450,7 @@ const styles = StyleSheet.create({
   containerBack: {
     flex: 1,
   },
-  header: {
-    height: 150,
-    paddingTop: 40,
-  },
   headerTitle: {
-    height: 150,
-    paddingTop: 40,
     justifyContent: "center",
     textAlign: "center",
     fontSize: 28,
@@ -410,7 +474,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 20,
-    color: "#fff",
   },
   icon: {
     marginRight: 15,
@@ -418,32 +481,32 @@ const styles = StyleSheet.create({
   infoLabel: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#ffffffff",
+    color: "#000",
     width: 80,
   },
   infoValue: {
     fontSize: 16,
-    color: "#ffffffff",
+    color: "#000",
     flex: 1,
   },
   button: {
     justifyContent: "center",
     flexDirection: "row",
-    backgroundColor: "#ffffffff",
+    backgroundColor: "#ffffff",
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 12,
     marginTop: 30,
-    marginLeft: 15,
     alignSelf: "flex-start",
     elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+  },
+  editButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 10,
   },
   buttonText: {
-    color: "#000000ff",
+    color: "#000",
     fontSize: 16,
     fontWeight: "bold",
     marginLeft: 10,
@@ -456,22 +519,15 @@ const styles = StyleSheet.create({
   cupom: {
     justifyContent: "center",
     flexDirection: "row",
-    backgroundColor: "#ffffffff",
+    backgroundColor: "#ffffff",
     paddingHorizontal: 100,
     paddingVertical: 20,
     borderRadius: 12,
     marginTop: 30,
-    marginLeft: 15,
     alignSelf: "center",
     elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
   },
   cupomtext: {
-    justifyContent: "center",
-    flexDirection: "row",
     fontSize: 20,
     textAlign: "center",
   },
@@ -491,20 +547,6 @@ const styles = StyleSheet.create({
     color: "#fff",
     marginBottom: 20,
   },
-  qrCodeButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#007bff",
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-  },
-  qrCodeButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-    marginLeft: 10,
-  },
   leitorContainer: {
     alignItems: "center",
     marginTop: 20,
@@ -520,20 +562,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#fff",
     marginBottom: 20,
-  },
-  leitorButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#28a745",
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-  },
-  leitorButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-    marginLeft: 10,
   },
   modalOverlay: {
     flex: 1,
@@ -562,6 +590,14 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     padding: 5,
+  },
+  input: {
+    width: "100%",
+    padding: 10,
+    borderColor: "#ccc",
+    borderWidth: 1,
+    borderRadius: 5,
+    marginBottom: 15,
   },
   modalBody: {
     width: "100%",
@@ -651,3 +687,5 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
 });
+
+export default AreaUsuario;

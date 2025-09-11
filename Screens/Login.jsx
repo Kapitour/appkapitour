@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,10 +6,10 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
   Image,
+  TouchableWithoutFeedback,
+  Keyboard,
+  Platform,
 } from "react-native";
 import { FontAwesome } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
@@ -17,13 +17,48 @@ import logo from "../assets/Kapitour.png";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAuth } from "../contexts/AuthContext";
 
+// 🔑 Google Auth
+import * as WebBrowser from "expo-web-browser";
+import * as Google from "expo-auth-session/providers/google";
+
+WebBrowser.maybeCompleteAuthSession();
+
 const LoginScreen = () => {
   const navigation = useNavigation();
   const { signIn } = useAuth();
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
+  // 🔑 Configuração Google Auth
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    expoClientId: "242066919914-imirkuqjvsmnj5fhurnre4c6fubks783.apps.googleusercontent.com", // Web / Expo Go
+    iosClientId: "242066919914-5qka4ubortq08t5nrveii8kmvpe4jd5k.apps.googleusercontent.com", // iOS real build
+    // androidClientId: "SEU_CLIENT_ID_ANDROID.apps.googleusercontent.com", // Android real build
+  });
+
+  useEffect(() => {
+    if (response?.type === "success") {
+      const { authentication } = response;
+      console.log("Token Google:", authentication.accessToken);
+
+      // Buscar dados do usuário
+      fetch("https://www.googleapis.com/userinfo/v2/me", {
+        headers: { Authorization: `Bearer ${authentication.accessToken}` },
+      })
+        .then((res) => res.json())
+        .then((user) => {
+          console.log("Usuário Google:", user);
+          // Aqui você pode integrar com seu backend (cadastro/login)
+        })
+        .catch((err) =>
+          console.error("Erro ao buscar dados do Google:", err)
+        );
+    }
+  }, [response]);
+
+  // 🔑 Login com email/senha
   const handleLogin = async () => {
     if (!email || !senha) {
       Alert.alert("Campos obrigatórios", "Preencha todos os campos.");
@@ -31,13 +66,11 @@ const LoginScreen = () => {
     }
 
     setLoading(true);
-    
+
     try {
       const result = await signIn(email, senha);
-      
+
       if (result.success) {
-        // Login bem-sucedido - o contexto de autenticação irá automaticamente
-        // redirecionar para a tela principal
         console.log("Login realizado com sucesso!");
       } else {
         Alert.alert("Erro no login", result.error);
@@ -50,74 +83,97 @@ const LoginScreen = () => {
   };
 
   return (
-    <LinearGradient
-      colors={["#c83349", "#0f142c"]}
-      start={{ x: 1.5, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={styles.container}
-    >
-      <Image source={logo} style={{ marginBottom: -250 }}></Image>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <LinearGradient
+        colors={["#c83349", "#ffffffff"]}
+        start={{ x: 1.5, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.container}
+      >
+        <Image source={logo} style={{ marginBottom: -250 }} />
 
-      <View style={styles.formBox}>
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          placeholderTextColor="#454140"
-          autoCapitalize="none"
-          keyboardType="email-address"
-          value={email}
-          onChangeText={setEmail}
-          textAlign="center"
-          editable={!loading}
-        />
+        <View style={styles.formBox}>
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            placeholderTextColor="#454140"
+            autoCapitalize="none"
+            keyboardType="email-address"
+            value={email}
+            onChangeText={setEmail}
+            textAlign="left"
+            editable={!loading}
+          />
 
-        <TextInput
-          style={styles.input}
-          placeholder="Senha"
-          placeholderTextColor="#454140"
-          secureTextEntry
-          value={senha}
-          onChangeText={setSenha}
-          textAlign="center"
-          editable={!loading}
-        />
+          <View style={styles.passwordContainer}>
+            <TextInput
+              style={[styles.input, styles.passwordInput]}
+              placeholder="Senha"
+              placeholderTextColor="#454140"
+              secureTextEntry={!showPassword}
+              value={senha}
+              onChangeText={setSenha}
+              textAlign="left"
+              editable={!loading}
+            />
+            <TouchableOpacity
+              onPress={() => setShowPassword(!showPassword)}
+              style={styles.togglePassword}
+            >
+              <FontAwesome
+                name={showPassword ? "eye" : "eye-slash"}
+                size={20}
+                color="#454140"
+              />
+            </TouchableOpacity>
+          </View>
 
-        <TouchableOpacity 
-          style={[styles.button, loading && styles.buttonDisabled]} 
-          onPress={handleLogin}
-          disabled={loading}
-        >
-          <Text style={styles.buttonText}>
-            {loading ? "Entrando..." : "Login"}
-          </Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.button, loading && styles.buttonDisabled]}
+            onPress={handleLogin}
+            disabled={loading}
+          >
+            <Text style={styles.buttonText}>
+              {loading ? "Entrando..." : "Login"}
+            </Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity 
-          onPress={() => navigation.navigate("Cadastro")}
-          disabled={loading}
-        >
-          <Text style={styles.cadastroText}>Cadastrar-se</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => navigation.navigate("Cadastro")}
+            disabled={loading}
+          >
+            <Text style={styles.cadastroText}>Cadastrar-se</Text>
+          </TouchableOpacity>
 
-        <View style={styles.divider}>
-          <View style={styles.line} />
-          <Text style={styles.dividerText}>Login por:</Text>
-          <View style={styles.line} />
+          <View style={styles.divider}>
+            <View style={styles.line} />
+            <Text style={styles.dividerText}>Login por:</Text>
+            <View style={styles.line} />
+          </View>
+
+          <View style={styles.socialIcons}>
+            {/* Google Login */}
+            <TouchableOpacity
+              style={styles.iconButton}
+              disabled={!request}
+              onPress={() => promptAsync()}
+            >
+              <FontAwesome name="google" size={20} color="#c83349" />
+            </TouchableOpacity>
+
+            {/* Facebook (placeholder) */}
+            <TouchableOpacity style={styles.iconButton}>
+              <FontAwesome name="facebook" size={20} color="#c83349" />
+            </TouchableOpacity>
+
+            {/* Instagram (placeholder) */}
+            <TouchableOpacity style={styles.iconButton}>
+              <FontAwesome name="instagram" size={20} color="#c83349" />
+            </TouchableOpacity>
+          </View>
         </View>
-
-        <View style={styles.socialIcons}>
-          <TouchableOpacity style={styles.iconButton}>
-            <FontAwesome name="google" size={20} color="#c83349" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton}>
-            <FontAwesome name="facebook" size={20} color="#c83349" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton}>
-            <FontAwesome name="instagram" size={20} color="#c83349" />
-          </TouchableOpacity>
-        </View>
-      </View>
-    </LinearGradient>
+      </LinearGradient>
+    </TouchableWithoutFeedback>
   );
 };
 
@@ -140,13 +196,26 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
     elevation: 0,
     marginTop: 200,
+    textAlign: "right",
   },
   input: {
     backgroundColor: "#ffffff84",
     color: "#000000cc",
     padding: 20,
-    borderRadius: 5,
+    borderRadius: 10,
     marginBottom: 15,
+  },
+  passwordContainer: {
+    position: "relative",
+    marginBottom: 15,
+  },
+  passwordInput: {
+    paddingRight: 50,
+  },
+  togglePassword: {
+    position: "absolute",
+    right: 15,
+    top: 15,
   },
   button: {
     backgroundColor: "#c83349",

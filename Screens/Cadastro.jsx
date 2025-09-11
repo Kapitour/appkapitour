@@ -141,26 +141,26 @@ export default function Cadastro() {
           alert("Erro ao inserir dados do usuário: " + insertError.message);
           return;
         }
+
+        // Envia e-mail de confirmação
+        await supabase.auth.api.sendMagicLinkEmail(email);
+
+        // Exibe mensagem de confirmação
+        Alert.alert(
+          "Confirmação de E-mail",
+          "Um e-mail de confirmação foi enviado. Por favor, verifique sua caixa de entrada.",
+          [{ text: "OK" }]
+        );
+
+        // Redireciona após 2 minutos
+        setTimeout(() => {
+          navigation.reset({
+            index: 0,
+            routes: [{ name: "Login" }],
+          });
+        }, 120000); // 2 minutos
       }
 
-      // Realiza a animação
-      Animated.parallel([
-        Animated.timing(formOpacity, {
-          toValue: 0,
-          duration: 500,
-          useNativeDriver: true,
-        }),
-        Animated.timing(formScale, {
-          toValue: 0.8,
-          duration: 500,
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
-        navigation.reset({
-          index: 0,
-          routes: [{ name: "Login" }],
-        });
-      });
     } catch (err) {
       alert("Erro inesperado: " + err.message);
     }
@@ -206,7 +206,7 @@ export default function Cadastro() {
                 )}
               </TouchableOpacity>
 
-              <Text style={styles.label}>Nome:</Text>
+              <Text style={styles.label}>ID Usuário:</Text>
               <TextInput
                 placeholder="Digite seu nome"
                 style={styles.input}
