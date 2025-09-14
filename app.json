@@ -23,7 +23,9 @@
     },
     "owner": "barralbruno",
     "plugins": [
-      "expo-maps"
+      "expo-maps",
+      "expo-font",
+      "expo-web-browser"
     ]
   }
 }
