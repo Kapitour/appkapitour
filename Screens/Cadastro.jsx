@@ -7,7 +7,6 @@ import {
   Animated,
   StyleSheet,
   Pressable,
-  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -15,14 +14,12 @@ import {
   TouchableWithoutFeedback,
   Alert,
 } from "react-native";
-import * as ImagePicker from "expo-image-picker";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "./../lib/supabase";
 
 export default function Cadastro() {
   const navigation = useNavigation();
-  const [profileImage, setProfileImage] = useState(null);
   const [registered, setRegistered] = useState(false);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
 
@@ -78,32 +75,29 @@ export default function Cadastro() {
     setSexo(value === sexo ? "" : value);
   };
 
-  const pickImage = async () => {
-    const permissionResult =
-      await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permissionResult.granted) {
-      alert("Permissão de acesso à galeria é necessária!");
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 1,
-      allowsEditing: true,
-      aspect: [1, 1],
-    });
-
-    if (!result.canceled) {
-      setProfileImage(result.assets[0].uri);
-    }
-  };
-
   const handleRegister = async () => {
     if (!name || !email || !cpf || !sexo || !password || !nascimento) {
       alert("Preencha todos os campos.");
       return;
     }
     try {
+      // Primeiro, verifica se o email já existe
+      const { data: existingUsers, error: checkError } = await supabase
+        .from("usuarios")
+        .select("email")
+        .eq("email", email);
+
+      if (checkError) {
+        alert("Erro ao verificar email: " + checkError.message);
+        return;
+      }
+
+      if (existingUsers && existingUsers.length > 0) {
+        alert("Este email já está cadastrado.");
+        return;
+      }
+
+      // Cria o usuário no Auth
       const { data, error } = await supabase.auth.signUp({
         email: email,
         password: password,
@@ -122,10 +116,10 @@ export default function Cadastro() {
         return;
       }
 
-      // Espera o usuário ser criado e confirmado
       const user = data.user;
 
       if (user) {
+        // Insere os dados na tabela usuarios
         const { error: insertError } = await supabase.from("usuarios").insert([
           {
             user_id: user.id,
@@ -133,6 +127,7 @@ export default function Cadastro() {
             email: email,
             cpf: cpf,
             sexo: sexo,
+            data_nascimento: nascimento,
             data_criacao: new Date().toISOString(),
           },
         ]);
@@ -142,23 +137,34 @@ export default function Cadastro() {
           return;
         }
 
-        // Envia e-mail de confirmação
-        await supabase.auth.api.sendMagicLinkEmail(email);
+        // Envia e-mail de confirmação (use o método correto para sua versão do Supabase)
+        const { error: emailError } = await supabase.auth.resend({
+          type: 'signup',
+          email: email,
+        });
+
+        if (emailError) {
+          console.log("Erro ao enviar email:", emailError);
+        }
 
         // Exibe mensagem de confirmação
         Alert.alert(
-          "Confirmação de E-mail",
+          "Cadastro realizado com sucesso!",
           "Um e-mail de confirmação foi enviado. Por favor, verifique sua caixa de entrada.",
-          [{ text: "OK" }]
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: "Login" }],
+                });
+              }
+            }
+          ]
         );
 
-        // Redireciona após 2 minutos
-        setTimeout(() => {
-          navigation.reset({
-            index: 0,
-            routes: [{ name: "Login" }],
-          });
-        }, 120000); // 2 minutos
+        setRegistered(true);
       }
 
     } catch (err) {
@@ -193,20 +199,7 @@ export default function Cadastro() {
                 },
               ]}
             >
-              <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
-                {profileImage ? (
-                  <Image
-                    source={{ uri: profileImage }}
-                    style={styles.profileImage}
-                  />
-                ) : (
-                  <Text style={styles.imagePlaceholderText}>
-                    Adicionar Foto
-                  </Text>
-                )}
-              </TouchableOpacity>
-
-              <Text style={styles.label}>ID Usuário:</Text>
+              <Text style={styles.label}>Nome:</Text>
               <TextInput
                 placeholder="Digite seu nome"
                 style={styles.input}
@@ -219,6 +212,7 @@ export default function Cadastro() {
                 placeholder="Digite seu email"
                 style={styles.input}
                 keyboardType="email-address"
+                autoCapitalize="none"
                 value={email}
                 onChangeText={setEmail}
               />
@@ -272,14 +266,16 @@ export default function Cadastro() {
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry
+                autoCapitalize="none"
               />
 
               <Text style={styles.label}>Data de Nascimento:</Text>
               <TextInput
-                placeholder="Digite seu nascimento"
+                placeholder="DD/MM/AAAA"
                 style={styles.input}
                 value={nascimento}
                 onChangeText={setNascimento}
+                keyboardType="numeric"
               />
 
               <TouchableOpacity style={styles.button} onPress={handleRegister}>
@@ -299,6 +295,12 @@ export default function Cadastro() {
               <Text style={styles.success}>
                 Cadastro realizado com sucesso!
               </Text>
+              <TouchableOpacity 
+                style={styles.button} 
+                onPress={() => navigation.navigate("Login")}
+              >
+                <Text style={styles.buttonText}>Fazer Login</Text>
+              </TouchableOpacity>
             </Animated.View>
           )}
         </ScrollView>
@@ -323,43 +325,24 @@ const styles = StyleSheet.create({
     width: "100%",
     alignItems: "center",
   },
-  imagePicker: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: "#444",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 20,
-    overflow: "hidden",
-  },
-  profileImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-  },
-  imagePlaceholderText: {
-    color: "white",
-    textAlign: "center",
-    fontSize: 12,
-  },
   label: {
     color: "white",
     alignSelf: "flex-start",
     marginTop: 10,
+    marginBottom: 5,
   },
   input: {
     backgroundColor: "#fff",
     color: "black",
-    padding: 10,
-    marginTop: 5,
+    padding: 15,
     borderRadius: 5,
     width: "100%",
+    marginBottom: 15,
   },
   button: {
     backgroundColor: "#c83349",
     marginTop: 20,
-    padding: 10,
+    padding: 15,
     borderRadius: 5,
     width: "100%",
   },
@@ -367,21 +350,24 @@ const styles = StyleSheet.create({
     color: "white",
     textAlign: "center",
     fontWeight: "bold",
+    fontSize: 16,
   },
   success: {
     color: "#0f0",
     fontSize: 18,
     textAlign: "center",
+    marginBottom: 20,
   },
   checkboxGroup: {
     flexDirection: "row",
     marginTop: 10,
     justifyContent: "space-around",
     width: "100%",
+    marginBottom: 15,
   },
   checkbox: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
     borderRadius: 5,
     backgroundColor: "#444",
   },
@@ -396,5 +382,8 @@ const styles = StyleSheet.create({
     top: 50,
     left: 20,
     zIndex: 10,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    borderRadius: 20,
+    padding: 5,
   },
 });

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -9,19 +9,12 @@ import {
   Image,
   TouchableWithoutFeedback,
   Keyboard,
-  Platform,
 } from "react-native";
 import { FontAwesome } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import logo from "../assets/Kapitour.png";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAuth } from "../contexts/AuthContext";
-
-// 🔑 Google Auth
-import * as WebBrowser from "expo-web-browser";
-import * as Google from "expo-auth-session/providers/google";
-
-WebBrowser.maybeCompleteAuthSession();
 
 const LoginScreen = () => {
   const navigation = useNavigation();
@@ -30,33 +23,6 @@ const LoginScreen = () => {
   const [senha, setSenha] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-
-  // 🔑 Configuração Google Auth
-  const [request, response, promptAsync] = Google.useAuthRequest({
-    expoClientId: "242066919914-imirkuqjvsmnj5fhurnre4c6fubks783.apps.googleusercontent.com", // Web / Expo Go
-    iosClientId: "242066919914-5qka4ubortq08t5nrveii8kmvpe4jd5k.apps.googleusercontent.com", // iOS real build
-    // androidClientId: "SEU_CLIENT_ID_ANDROID.apps.googleusercontent.com", // Android real build
-  });
-
-  useEffect(() => {
-    if (response?.type === "success") {
-      const { authentication } = response;
-      console.log("Token Google:", authentication.accessToken);
-
-      // Buscar dados do usuário
-      fetch("https://www.googleapis.com/userinfo/v2/me", {
-        headers: { Authorization: `Bearer ${authentication.accessToken}` },
-      })
-        .then((res) => res.json())
-        .then((user) => {
-          console.log("Usuário Google:", user);
-          // Aqui você pode integrar com seu backend (cadastro/login)
-        })
-        .catch((err) =>
-          console.error("Erro ao buscar dados do Google:", err)
-        );
-    }
-  }, [response]);
 
   // 🔑 Login com email/senha
   const handleLogin = async () => {
@@ -85,7 +51,7 @@ const LoginScreen = () => {
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <LinearGradient
-        colors={["#c83349", "#ffffffff"]}
+        colors={["#c83349", "#090909ff"]}
         start={{ x: 1.5, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.container}
@@ -147,16 +113,16 @@ const LoginScreen = () => {
 
           <View style={styles.divider}>
             <View style={styles.line} />
-            <Text style={styles.dividerText}>Login por:</Text>
+            <Text style={styles.dividerText}>Outras opções:</Text>
             <View style={styles.line} />
           </View>
 
           <View style={styles.socialIcons}>
-            {/* Google Login */}
-            <TouchableOpacity
-              style={styles.iconButton}
-              disabled={!request}
-              onPress={() => promptAsync()}
+            {/* Google - removida a lógica */}
+            <TouchableOpacity 
+              style={styles.iconButton} 
+              onPress={() => alert("Login Google removido")}
+              disabled={loading}
             >
               <FontAwesome name="google" size={20} color="#c83349" />
             </TouchableOpacity>
@@ -261,7 +227,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   iconButton: {
-    backgroundColor: "#ffffffa2",
+    backgroundColor: "#d02626a2",
     width: 70,
     height: 40,
     borderRadius: 99,

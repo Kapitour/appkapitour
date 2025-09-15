@@ -15,6 +15,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAuth } from "../contexts/AuthContext";
 import QRCode from "react-native-qrcode-svg";
+import { supabase } from "../lib/supabase";
 import { 
   buscarCuponsDisponiveis, 
   buscarCuponsResgatados,
@@ -24,25 +25,33 @@ import {
 
 const AreaUsuario = () => {
   const navigation = useNavigation();
-  const { userInfo, signOut } = useAuth();
+  const { userInfo, signOut, user } = useAuth(); // Adicionei 'user' do AuthContext
   const [showQRCode, setShowQRCode] = useState(false);
   const [showCupons, setShowCupons] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [cuponsDisponiveis, setCuponsDisponiveis] = useState([]);
   const [cuponsResgatados, setCuponsResgatados] = useState([]);
   const [loadingCupons, setLoadingCupons] = useState(false);
-  const [nome, setNome] = useState(userInfo?.nome);
-  const [email, setEmail] = useState(userInfo?.email);
-  const [cpf, setCpf] = useState(userInfo?.cpf);
-  const [sexo, setSexo] = useState(userInfo?.sexo);
+  const [nome, setNome] = useState("");
+  const [email, setEmail] = useState("");
+  const [cpf, setCpf] = useState("");
+  const [sexo, setSexo] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchUserInfo();
-  }, []);
+    if (user) {
+      fetchUserInfo();
+    } else {
+      setLoading(false);
+      Alert.alert('Erro', 'Usuário não autenticado. Faça login novamente.');
+      signOut();
+    }
+  }, [user]);
 
   const fetchUserInfo = async () => {
-    if (!userInfo || !userInfo.id) {
+    if (!user || !user.id) {
       Alert.alert('Erro', 'Usuário não autenticado.');
+      setLoading(false);
       return;
     }
 
@@ -50,7 +59,8 @@ const AreaUsuario = () => {
       const { data, error } = await supabase
         .from('usuarios')
         .select('*')
-        .eq('id', userInfo.id);
+        .eq('user_id', user.id) // Use user_id em vez de id
+        .single(); // Use single() para garantir apenas um resultado
 
       if (error) {
         console.error('Erro ao buscar informações do usuário:', error);
@@ -58,20 +68,23 @@ const AreaUsuario = () => {
         return;
       }
 
-      if (!data || data.length === 0) {
+      if (!data) {
         Alert.alert('Erro', 'Nenhum usuário encontrado.');
         return;
       }
 
       // Atualize os estados com as informações do usuário
-      const user = data[0];
-      setNome(user.nome);
-      setEmail(user.email);
-      setCpf(user.cpf);
-      setSexo(user.sexo);
+      setNome(data.nome);
+      setEmail(data.email);
+      setCpf(data.cpf);
+      setSexo(data.sexo);
+      
+      // Se você precisa manter userInfo atualizado, pode precisar atualizar o contexto
     } catch (err) {
       console.error('Erro inesperado:', err);
       Alert.alert('Erro', 'Ocorreu um erro inesperado.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -163,7 +176,7 @@ const AreaUsuario = () => {
         style={styles.icon}
       />
       <Text style={styles.infoLabel}>{label}:</Text>
-      <Text style={styles.infoValue}>{value}</Text>
+      <Text style={styles.infoValue}>{value || "Não informado"}</Text>
     </View>
   );
 
@@ -208,6 +221,11 @@ const AreaUsuario = () => {
   };
 
   const handleUpdateUser = async () => {
+    if (!user || !user.id) {
+      Alert.alert('Erro', 'Usuário não autenticado.');
+      return;
+    }
+
     const updatedUser = {
       nome,
       email,
@@ -216,10 +234,12 @@ const AreaUsuario = () => {
     };
     
     try {
-      const result = await atualizarUsuario(userInfo.id, updatedUser);
+      const result = await atualizarUsuario(user.id, updatedUser);
       if (result.success) {
         Alert.alert("Sucesso", "Dados atualizados com sucesso!");
         setShowEditModal(false);
+        // Recarregar os dados do usuário
+        fetchUserInfo();
       } else {
         Alert.alert("Erro", result.error);
       }
@@ -260,6 +280,7 @@ const AreaUsuario = () => {
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
+            autoCapitalize="none"
           />
           <TextInput
             style={styles.input}
@@ -344,19 +365,48 @@ const AreaUsuario = () => {
           
           <View style={styles.qrCodeContent}>
             <QRCode
-              value={userInfo?.id?.toString() || ''}
+              value={user?.id || ''}
               size={200}
               color="#000"
               backgroundColor="#fff"
             />
             <Text style={styles.qrCodeInfo}>
-              Nome: {userInfo?.nome}
+              Nome: {nome}
             </Text>
           </View>
         </View>
       </View>
     </Modal>
   );
+
+  if (loading) {
+    return (
+      <LinearGradient
+        colors={["#c83349", "#0f142c"]}
+        style={styles.containerBack}
+      >
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Carregando...</Text>
+        </View>
+      </LinearGradient>
+    );
+  }
+
+  if (!user) {
+    return (
+      <LinearGradient
+        colors={["#c83349", "#0f142c"]}
+        style={styles.containerBack}
+      >
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Usuário não autenticado</Text>
+          <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Login')}>
+            <Text style={styles.buttonText}>Fazer Login</Text>
+          </TouchableOpacity>
+        </View>
+      </LinearGradient>
+    );
+  }
 
   return (
     <LinearGradient
@@ -374,49 +424,45 @@ const AreaUsuario = () => {
         <Text style={styles.headerTitle}>Área do Usuário</Text>
 
         <View style={styles.content}>
-          {userInfo ? (
-            <View style={styles.card}>
-              <InfoRow
-                icon="account-circle-outline"
-                label="Nome"
-                value={userInfo.nome}
-              />
-              <InfoRow 
-                icon="email-outline" 
-                label="Email" 
-                value={userInfo.email} 
-              />
-              <InfoRow
-                icon="card-account-details-outline"
-                label="CPF"
-                value={userInfo.cpf}
-              />
-              <InfoRow 
-                icon="gender-male-female" 
-                label="Sexo" 
-                value={userInfo.sexo} 
-              />
-              <InfoRow
-                icon="calendar-month-outline"
-                label="Membro desde"
-                value={new Date(userInfo.data_criacao).toLocaleDateString("pt-BR")}
-              />
-              <InfoRow
-                icon="shield-account-outline"
-                label="Tipo de Usuário"
-                value={getTipoUsuarioText(userInfo.tipo_usuario_id)}
-              />
-              <TouchableOpacity 
-                style={styles.editButton}
-                onPress={() => setShowEditModal(true)}
-              >
-                <MaterialCommunityIcons name="pencil" size={20} color="#333" />
-                <Text style={styles.buttonText}>Editar</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <Text style={styles.loadingText}>Carregando dados do usuário...</Text>
-          )}
+          <View style={styles.card}>
+            <InfoRow
+              icon="account-circle-outline"
+              label="Nome"
+              value={nome}
+            />
+            <InfoRow 
+              icon="email-outline" 
+              label="Email" 
+              value={email} 
+            />
+            <InfoRow
+              icon="card-account-details-outline"
+              label="CPF"
+              value={cpf}
+            />
+            <InfoRow 
+              icon="gender-male-female" 
+              label="Sexo" 
+              value={sexo} 
+            />
+            <InfoRow
+              icon="calendar-month-outline"
+              label="Membro desde"
+              value={userInfo?.data_criacao ? new Date(userInfo.data_criacao).toLocaleDateString("pt-BR") : "Não disponível"}
+            />
+            <InfoRow
+              icon="shield-account-outline"
+              label="Tipo de Usuário"
+              value={userInfo?.tipo_usuario_id ? getTipoUsuarioText(userInfo.tipo_usuario_id) : "Não definido"}
+            />
+            <TouchableOpacity 
+              style={styles.editButton}
+              onPress={() => setShowEditModal(true)}
+            >
+              <MaterialCommunityIcons name="pencil" size={20} color="#333" />
+              <Text style={styles.buttonText}>Editar</Text>
+            </TouchableOpacity>
+          </View>
 
           {/* QR Code para usuários comuns e admins */}
           {renderQRCode()}
@@ -450,6 +496,22 @@ const styles = StyleSheet.create({
   containerBack: {
     flex: 1,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    color: '#fff',
+    fontSize: 18,
+    marginBottom: 20,
+  },
   headerTitle: {
     justifyContent: "center",
     textAlign: "center",
@@ -465,6 +527,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   card: {
+    backgroundColor: '#fff',
     borderRadius: 15,
     padding: 25,
     width: "100%",
@@ -602,42 +665,6 @@ const styles = StyleSheet.create({
   modalBody: {
     width: "100%",
   },
-  cuponsSection: {
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 10,
-  },
-  cupomCard: {
-    backgroundColor: "#f0f0f0",
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 10,
-  },
-  cupomNome: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 5,
-  },
-  cupomDescricao: {
-    fontSize: 14,
-    color: "#666",
-    marginBottom: 5,
-  },
-  cupomQuantidade: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#007bff",
-    marginBottom: 5,
-  },
-  cupomValidade: {
-    fontSize: 14,
-    color: "#666",
-  },
   resgateCard: {
     backgroundColor: "#e0e0e0",
     borderRadius: 10,
@@ -649,15 +676,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#333",
     marginBottom: 5,
-  },
-  resgateUsuario: {
-    fontSize: 14,
-    color: "#555",
-    marginBottom: 5,
-  },
-  resgateParceiro: {
-    fontSize: 14,
-    color: "#555",
   },
   resgateData: {
     fontSize: 12,
