@@ -37,6 +37,7 @@ const AreaUsuario = () => {
   const [cpf, setCpf] = useState("");
   const [sexo, setSexo] = useState("");
   const [loading, setLoading] = useState(true);
+  const [tipoUsuarioId, setTipoUsuarioId] = useState(null);
 
   useEffect(() => {
     if (user) {
@@ -81,6 +82,7 @@ const AreaUsuario = () => {
       setEmail(data.email);
       setCpf(data.cpf);
       setSexo(data.sexo);
+      setTipoUsuarioId(data.tipo_usuario_id);
 
       // Se você precisa manter userInfo atualizado, pode precisar atualizar o contexto
     } catch (err) {
@@ -187,10 +189,7 @@ const AreaUsuario = () => {
   );
 
   const renderQRCode = () => {
-    if (
-      !userInfo ||
-      (userInfo.tipo_usuario_id !== 1 && userInfo.tipo_usuario_id !== 3)
-    ) {
+    if (tipoUsuarioId !== 1 && tipoUsuarioId !== 3) {
       return null;
     }
 
@@ -385,7 +384,6 @@ const AreaUsuario = () => {
               color="#000"
               backgroundColor="#fff"
             />
-            <Text style={styles.qrCodeInfo}>Nome: {nome}</Text>
           </View>
         </View>
       </View>
@@ -431,11 +429,10 @@ const AreaUsuario = () => {
       end={{ x: 1, y: 1 }}
       style={styles.containerBack}
     >
-      <ScrollView style={styles.container}>
-        <TouchableOpacity style={styles.button} onPress={handleLogout}>
-          <MaterialCommunityIcons name="logout" size={20} color="#000000ff" />
-          <Text style={styles.buttonText}>Sair</Text>
-        </TouchableOpacity>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={{ paddingBottom: 100 , paddingTop:40 }}
+      >
 
         <Text style={styles.headerTitle}>Área do Usuário</Text>
 
@@ -448,22 +445,12 @@ const AreaUsuario = () => {
               label="CPF"
               value={cpf}
             />
-            <InfoRow icon="gender-male-female" label="Sexo" value={sexo} />
-            <InfoRow
-              icon="calendar-month-outline"
-              label="Membro desde"
-              value={
-                userInfo?.data_criacao
-                  ? new Date(userInfo.data_criacao).toLocaleDateString("pt-BR")
-                  : "Não disponível"
-              }
-            />
             <InfoRow
               icon="shield-account-outline"
               label="Tipo de Usuário"
               value={
-                userInfo?.tipo_usuario_id
-                  ? getTipoUsuarioText(userInfo.tipo_usuario_id)
+                tipoUsuarioId
+                  ? getTipoUsuarioText(tipoUsuarioId)
                   : "Não definido"
               }
             />
@@ -488,6 +475,10 @@ const AreaUsuario = () => {
             onPress={() => setShowCupons(true)}
           >
             <Text style={styles.cupomtext}>Meus Cupons</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+            <MaterialCommunityIcons name="logout" size={20} color="#fff" />
+            <Text style={styles.logoutButtonText}>Sair</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -592,36 +583,73 @@ const styles = StyleSheet.create({
     marginTop: 50,
   },
   cupom: {
-    justifyContent: "center",
-    flexDirection: "row",
-    backgroundColor: "#ffffff",
-    paddingHorizontal: 100,
-    paddingVertical: 20,
-    borderRadius: 12,
-    marginTop: 30,
-    alignSelf: "center",
-    elevation: 3,
-  },
-  cupomtext: {
-    fontSize: 20,
-    textAlign: "center",
-  },
+  justifyContent: "center",
+  flexDirection: "row",
+  backgroundColor: "#ffffff",
+  paddingVertical: 15,
+  paddingHorizontal: 40,
+  borderRadius: 12,
+  marginTop: 30,
+  alignSelf: "center",
+  elevation: 3,
+},
+
+cupomtext: {
+  fontSize: 18,
+  fontWeight: "bold",
+  textAlign: "center",
+},
   qrCodeContainer: {
     alignItems: "center",
-    marginTop: 20,
-    marginBottom: 20,
+    justifyContent: "center",
+    marginVertical: 30,
+    padding: 20,
+    backgroundColor: "#fff", // deixa o fundo do card branco
+    borderRadius: 15,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5, // para Android
   },
+
   qrCodeTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "bold",
-    color: "#fff",
-    marginBottom: 10,
+    color: "#c83349", // cor do destaque, combina com seu gradiente
+    marginBottom: 5,
+    textAlign: "center",
   },
+
   qrCodeSubtitle: {
-    fontSize: 14,
-    color: "#fff",
+    fontSize: 16,
+    color: "#333",
     marginBottom: 20,
+    textAlign: "center",
   },
+
+  qrCodeButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#c83349",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 25,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 4,
+  },
+
+  qrCodeButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+    marginLeft: 8,
+  },
+
   leitorContainer: {
     alignItems: "center",
     marginTop: 20,
@@ -650,6 +678,7 @@ const styles = StyleSheet.create({
     padding: 20,
     width: Dimensions.get("window").width * 0.8,
     alignItems: "center",
+    marginBottom: 50,
   },
   modalHeader: {
     flexDirection: "row",
@@ -716,6 +745,25 @@ const styles = StyleSheet.create({
     color: "#555",
     marginTop: 10,
   },
+  logoutButton: {
+  flexDirection: "row",
+  justifyContent: "center",
+  alignItems: "center",
+  backgroundColor: "#c83349", // vermelho padrão do app
+  paddingVertical: 15,
+  paddingHorizontal: 40,
+  borderRadius: 12,
+  marginTop: 20,
+  alignSelf: "center",
+  elevation: 3,
+},
+
+logoutButtonText: {
+  color: "#fff",
+  fontSize: 18,
+  fontWeight: "bold",
+  marginLeft: 10,
+},
 });
 
 export default AreaUsuario;
