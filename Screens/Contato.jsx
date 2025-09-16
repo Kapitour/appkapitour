@@ -12,23 +12,24 @@ import {
   Platform,
 } from "react-native";
 import { FontAwesome } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import fundo from "../assets/contatoFundo.png";
 
 const Contato = () => {
   const [showForm, setShowForm] = useState(false);
-  const translateX = useRef(new Animated.Value(0)).current;
+  const scale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
-        Animated.timing(translateX, {
-          toValue: -20,
-          duration: 8000,
+        Animated.timing(scale, {
+          toValue: 1.1,
+          duration: 1000,
           useNativeDriver: true,
         }),
-        Animated.timing(translateX, {
-          toValue: 20,
-          duration: 8000,
+        Animated.timing(scale, {
+          toValue: 1,
+          duration: 1000,
           useNativeDriver: true,
         }),
       ])
@@ -46,27 +47,36 @@ const Contato = () => {
 
   return (
     <View style={{ flex: 1 }}>
-      {/* Imagem de fundo animada */}
       <Animated.Image
         source={fundo}
-        style={[
-          styles.fundoimg,
-          {
-            transform: [{ translateX }],
-          },
-        ]}
+        style={[styles.fundoimg]}
         resizeMode="cover"
         blurRadius={1}
       />
 
-      {/* Conteúdo com fundo semi-transparente */}
       <ScrollView
         contentContainerStyle={styles.container}
         keyboardShouldPersistTaps="handled"
       >
-        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"}>
-          <View style={styles.overlay}>
-            <Text style={styles.title}>Entre em Contato</Text>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          <LinearGradient
+            colors={["#c3073f", "#1a1a2e"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+            style={styles.overlay}
+          >
+            <Animated.Text
+              style={[
+                styles.title,
+                {
+                  transform: [{ scale }],
+                },
+              ]}
+            >
+              Entre em Contato
+            </Animated.Text>
 
             <View style={styles.btns}>
               <TouchableOpacity
@@ -148,7 +158,7 @@ const Contato = () => {
                 </TouchableOpacity>
               </View>
             )}
-          </View>
+          </LinearGradient>
         </KeyboardAvoidingView>
       </ScrollView>
     </View>
@@ -174,10 +184,7 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 100,
     alignItems: "center",
-    backgroundColor: "rgba(59, 8, 21, 0.83)", // Cor mais escura e opaca, vermelho com azul escuro
     borderRadius: 0,
-    
-    
   },
   title: {
     fontSize: 28,
