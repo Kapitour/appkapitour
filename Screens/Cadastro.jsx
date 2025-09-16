@@ -122,7 +122,7 @@ export default function Cadastro() {
         // Insere os dados na tabela usuarios
         const { error: insertError } = await supabase.from("usuarios").insert([
           {
-            user_id: user.id,
+            auth_id: user.id, // vem do Supabase Auth
             nome: name,
             email: email,
             cpf: cpf,
@@ -139,7 +139,7 @@ export default function Cadastro() {
 
         // Envia e-mail de confirmação (use o método correto para sua versão do Supabase)
         const { error: emailError } = await supabase.auth.resend({
-          type: 'signup',
+          type: "signup",
           email: email,
         });
 
@@ -159,14 +159,13 @@ export default function Cadastro() {
                   index: 0,
                   routes: [{ name: "Login" }],
                 });
-              }
-            }
+              },
+            },
           ]
         );
 
         setRegistered(true);
       }
-
     } catch (err) {
       alert("Erro inesperado: " + err.message);
     }
@@ -295,8 +294,8 @@ export default function Cadastro() {
               <Text style={styles.success}>
                 Cadastro realizado com sucesso!
               </Text>
-              <TouchableOpacity 
-                style={styles.button} 
+              <TouchableOpacity
+                style={styles.button}
                 onPress={() => navigation.navigate("Login")}
               >
                 <Text style={styles.buttonText}>Fazer Login</Text>

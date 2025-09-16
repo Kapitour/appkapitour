@@ -16,11 +16,11 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useAuth } from "../contexts/AuthContext";
 import QRCode from "react-native-qrcode-svg";
 import { supabase } from "../lib/supabase";
-import { 
-  buscarCuponsDisponiveis, 
+import {
+  buscarCuponsDisponiveis,
   buscarCuponsResgatados,
   buscarHistoricoResgates,
-  atualizarUsuario 
+  atualizarUsuario,
 } from "../utils/cupomManager";
 
 const AreaUsuario = () => {
@@ -43,33 +43,36 @@ const AreaUsuario = () => {
       fetchUserInfo();
     } else {
       setLoading(false);
-      Alert.alert('Erro', 'Usuário não autenticado. Faça login novamente.');
+      Alert.alert("Erro", "Usuário não autenticado. Faça login novamente.");
       signOut();
     }
   }, [user]);
 
   const fetchUserInfo = async () => {
     if (!user || !user.id) {
-      Alert.alert('Erro', 'Usuário não autenticado.');
+      Alert.alert("Erro", "Usuário não autenticado.");
       setLoading(false);
       return;
     }
 
     try {
       const { data, error } = await supabase
-        .from('usuarios')
-        .select('*')
-        .eq('user_id', user.id) // Use user_id em vez de id
-        .single(); // Use single() para garantir apenas um resultado
+        .from("usuarios")
+        .select("*")
+        .eq("auth_id", user.id) // ✅ buscar pelo vínculo com Supabase Auth
+        .single();
 
       if (error) {
-        console.error('Erro ao buscar informações do usuário:', error);
-        Alert.alert('Erro', 'Não foi possível buscar as informações do usuário.');
+        console.error("Erro ao buscar informações do usuário:", error);
+        Alert.alert(
+          "Erro",
+          "Não foi possível buscar as informações do usuário."
+        );
         return;
       }
 
       if (!data) {
-        Alert.alert('Erro', 'Nenhum usuário encontrado.');
+        Alert.alert("Erro", "Nenhum usuário encontrado.");
         return;
       }
 
@@ -78,11 +81,11 @@ const AreaUsuario = () => {
       setEmail(data.email);
       setCpf(data.cpf);
       setSexo(data.sexo);
-      
+
       // Se você precisa manter userInfo atualizado, pode precisar atualizar o contexto
     } catch (err) {
-      console.error('Erro inesperado:', err);
-      Alert.alert('Erro', 'Ocorreu um erro inesperado.');
+      console.error("Erro inesperado:", err);
+      Alert.alert("Erro", "Ocorreu um erro inesperado.");
     } finally {
       setLoading(false);
     }
@@ -91,7 +94,10 @@ const AreaUsuario = () => {
   useEffect(() => {
     if (userInfo?.tipo_usuario_id === 2) {
       fetchCupons();
-    } else if (userInfo?.tipo_usuario_id === 1 || userInfo?.tipo_usuario_id === 3) {
+    } else if (
+      userInfo?.tipo_usuario_id === 1 ||
+      userInfo?.tipo_usuario_id === 3
+    ) {
       fetchHistoricoResgates();
     }
   }, [userInfo]);
@@ -101,7 +107,7 @@ const AreaUsuario = () => {
       setLoadingCupons(true);
       const [cuponsResult, resgatadosResult] = await Promise.all([
         buscarCuponsDisponiveis(userInfo.id),
-        buscarCuponsResgatados(userInfo.id)
+        buscarCuponsResgatados(userInfo.id),
       ]);
 
       if (cuponsResult.success) {
@@ -112,8 +118,8 @@ const AreaUsuario = () => {
         setCuponsResgatados(resgatadosResult.data);
       }
     } catch (error) {
-      console.error('Erro ao buscar cupons:', error);
-      Alert.alert('Erro', 'Não foi possível carregar os cupons');
+      console.error("Erro ao buscar cupons:", error);
+      Alert.alert("Erro", "Não foi possível carregar os cupons");
     } finally {
       setLoadingCupons(false);
     }
@@ -127,43 +133,43 @@ const AreaUsuario = () => {
         setCuponsResgatados(historicoResult.data);
       }
     } catch (error) {
-      console.error('Erro ao buscar histórico:', error);
+      console.error("Erro ao buscar histórico:", error);
     } finally {
       setLoadingCupons(false);
     }
   };
 
   const handleLogout = async () => {
-    Alert.alert(
-      "Sair",
-      "Tem certeza que deseja sair?",
-      [
-        {
-          text: "Cancelar",
-          style: "cancel",
+    Alert.alert("Sair", "Tem certeza que deseja sair?", [
+      {
+        text: "Cancelar",
+        style: "cancel",
+      },
+      {
+        text: "Sair",
+        style: "destructive",
+        onPress: async () => {
+          const result = await signOut();
+          if (result.success) {
+            console.log("Logout realizado com sucesso!");
+          } else {
+            Alert.alert("Erro ao sair", result.error);
+          }
         },
-        {
-          text: "Sair",
-          style: "destructive",
-          onPress: async () => {
-            const result = await signOut();
-            if (result.success) {
-              console.log("Logout realizado com sucesso!");
-            } else {
-              Alert.alert("Erro ao sair", result.error);
-            }
-          },
-        },
-      ]
-    );
+      },
+    ]);
   };
 
   const getTipoUsuarioText = (tipoId) => {
     switch (tipoId) {
-      case 1: return "Administrador";
-      case 2: return "Parceiro";
-      case 3: return "Usuário Comum";
-      default: return "Desconhecido";
+      case 1:
+        return "Administrador";
+      case 2:
+        return "Parceiro";
+      case 3:
+        return "Usuário Comum";
+      default:
+        return "Desconhecido";
     }
   };
 
@@ -181,7 +187,10 @@ const AreaUsuario = () => {
   );
 
   const renderQRCode = () => {
-    if (!userInfo || (userInfo.tipo_usuario_id !== 1 && userInfo.tipo_usuario_id !== 3)) {
+    if (
+      !userInfo ||
+      (userInfo.tipo_usuario_id !== 1 && userInfo.tipo_usuario_id !== 3)
+    ) {
       return null;
     }
 
@@ -189,7 +198,7 @@ const AreaUsuario = () => {
       <View style={styles.qrCodeContainer}>
         <Text style={styles.qrCodeTitle}>Seu QR Code</Text>
         <Text style={styles.qrCodeSubtitle}>Apresente para parceiros</Text>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.qrCodeButton}
           onPress={() => setShowQRCode(true)}
         >
@@ -208,10 +217,12 @@ const AreaUsuario = () => {
     return (
       <View style={styles.leitorContainer}>
         <Text style={styles.leitorTitle}>Leitor de QR Code</Text>
-        <Text style={styles.leitorSubtitle}>Escaneie QR Codes dos usuários</Text>
-        <TouchableOpacity 
+        <Text style={styles.leitorSubtitle}>
+          Escaneie QR Codes dos usuários
+        </Text>
+        <TouchableOpacity
           style={styles.leitorButton}
-          onPress={() => navigation.navigate('LeitorQR')}
+          onPress={() => navigation.navigate("LeitorQR")}
         >
           <MaterialCommunityIcons name="qrcode-scan" size={24} color="#fff" />
           <Text style={styles.leitorButtonText}>Abrir Leitor</Text>
@@ -222,7 +233,7 @@ const AreaUsuario = () => {
 
   const handleUpdateUser = async () => {
     if (!user || !user.id) {
-      Alert.alert('Erro', 'Usuário não autenticado.');
+      Alert.alert("Erro", "Usuário não autenticado.");
       return;
     }
 
@@ -232,7 +243,7 @@ const AreaUsuario = () => {
       cpf,
       sexo,
     };
-    
+
     try {
       const result = await atualizarUsuario(user.id, updatedUser);
       if (result.success) {
@@ -260,7 +271,7 @@ const AreaUsuario = () => {
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Editar Cadastro</Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => setShowEditModal(false)}
               style={styles.closeButton}
             >
@@ -314,7 +325,7 @@ const AreaUsuario = () => {
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Meus Cupons</Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => setShowCupons(false)}
               style={styles.closeButton}
             >
@@ -328,15 +339,19 @@ const AreaUsuario = () => {
               cuponsResgatados.map((resgate) => (
                 <View key={resgate.id} style={styles.resgateCard}>
                   <Text style={styles.resgateCampanha}>
-                    {resgate.cupom?.campanha?.nome || `Cupom ${resgate.cupom_id}`}
+                    {resgate.cupom?.campanha?.nome ||
+                      `Cupom ${resgate.cupom_id}`}
                   </Text>
                   <Text style={styles.resgateData}>
-                    Resgatado em: {new Date(resgate.data_resgate).toLocaleDateString('pt-BR')}
+                    Resgatado em:{" "}
+                    {new Date(resgate.data_resgate).toLocaleDateString("pt-BR")}
                   </Text>
                 </View>
               ))
             ) : (
-              <Text style={styles.noCuponsText}>Nenhum cupom resgatado ainda</Text>
+              <Text style={styles.noCuponsText}>
+                Nenhum cupom resgatado ainda
+              </Text>
             )}
           </ScrollView>
         </View>
@@ -355,24 +370,22 @@ const AreaUsuario = () => {
         <View style={styles.qrCodeModalContent}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Seu QR Code</Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => setShowQRCode(false)}
               style={styles.closeButton}
             >
               <MaterialCommunityIcons name="close" size={24} color="#333" />
             </TouchableOpacity>
           </View>
-          
+
           <View style={styles.qrCodeContent}>
             <QRCode
-              value={user?.id || ''}
+              value={user?.id || ""}
               size={200}
               color="#000"
               backgroundColor="#fff"
             />
-            <Text style={styles.qrCodeInfo}>
-              Nome: {nome}
-            </Text>
+            <Text style={styles.qrCodeInfo}>Nome: {nome}</Text>
           </View>
         </View>
       </View>
@@ -400,7 +413,10 @@ const AreaUsuario = () => {
       >
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>Usuário não autenticado</Text>
-          <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Login')}>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() => navigation.navigate("Login")}
+          >
             <Text style={styles.buttonText}>Fazer Login</Text>
           </TouchableOpacity>
         </View>
@@ -425,37 +441,33 @@ const AreaUsuario = () => {
 
         <View style={styles.content}>
           <View style={styles.card}>
-            <InfoRow
-              icon="account-circle-outline"
-              label="Nome"
-              value={nome}
-            />
-            <InfoRow 
-              icon="email-outline" 
-              label="Email" 
-              value={email} 
-            />
+            <InfoRow icon="account-circle-outline" label="Nome" value={nome} />
+            <InfoRow icon="email-outline" label="Email" value={email} />
             <InfoRow
               icon="card-account-details-outline"
               label="CPF"
               value={cpf}
             />
-            <InfoRow 
-              icon="gender-male-female" 
-              label="Sexo" 
-              value={sexo} 
-            />
+            <InfoRow icon="gender-male-female" label="Sexo" value={sexo} />
             <InfoRow
               icon="calendar-month-outline"
               label="Membro desde"
-              value={userInfo?.data_criacao ? new Date(userInfo.data_criacao).toLocaleDateString("pt-BR") : "Não disponível"}
+              value={
+                userInfo?.data_criacao
+                  ? new Date(userInfo.data_criacao).toLocaleDateString("pt-BR")
+                  : "Não disponível"
+              }
             />
             <InfoRow
               icon="shield-account-outline"
               label="Tipo de Usuário"
-              value={userInfo?.tipo_usuario_id ? getTipoUsuarioText(userInfo.tipo_usuario_id) : "Não definido"}
+              value={
+                userInfo?.tipo_usuario_id
+                  ? getTipoUsuarioText(userInfo.tipo_usuario_id)
+                  : "Não definido"
+              }
             />
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.editButton}
               onPress={() => setShowEditModal(true)}
             >
@@ -471,7 +483,7 @@ const AreaUsuario = () => {
           {renderLeitorQR()}
 
           {/* Botão de Cupons */}
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.cupom}
             onPress={() => setShowCupons(true)}
           >
@@ -498,17 +510,17 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   errorContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: 20,
   },
   errorText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 18,
     marginBottom: 20,
   },
@@ -527,7 +539,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 15,
     padding: 25,
     width: "100%",
