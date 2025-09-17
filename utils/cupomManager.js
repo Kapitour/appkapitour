@@ -1,9 +1,10 @@
 import { supabase } from '../lib/supabase';
 
-// Buscar cupons disponíveis para um usuário
-export const buscarCuponsDisponiveis = async (usuarioId) => {
+// Buscar cupons disponíveis
+// Se parceiroId for fornecido, filtra cupons daquele parceiro (para o leitor)
+export const buscarCuponsDisponiveis = async (parceiroId) => {
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('cupons')
       .select(`
         id,
@@ -12,9 +13,15 @@ export const buscarCuponsDisponiveis = async (usuarioId) => {
         data_validade,
         quantidade_disponivel,
         campanha_id,
-        campanha:campanhas(nome)
+        campanha:campanhas(id, nome, descricao, data_inicio, data_fim, ativa)
       `)
       .gt('quantidade_disponivel', 0);
+
+    if (parceiroId) {
+      query = query.eq('parceiro_id', parceiroId);
+    }
+
+    const { data, error } = await query;
 
     if (error) throw error;
 
@@ -127,7 +134,7 @@ export const verificarResgatePorCampanha = async (campanhaId, usuarioId) => {
 };
 
 // Resgatar um cupom
-export const resgatarCupom = async (cupomId, usuarioId) => {
+export const resgatarCupom = async (cupomId, usuarioId, parceiroId) => {
   try {
     const verificacao = await verificarCupomResgatado(cupomId, usuarioId);
     if (!verificacao.success) throw new Error(verificacao.error);
@@ -140,7 +147,31 @@ export const resgatarCupom = async (cupomId, usuarioId) => {
       .single();
     if (cupomError) throw cupomError;
 
+    // Validar que este cupom pertence ao parceiro logado
+    if (parceiroId && cupom.parceiro_id !== parceiroId) {
+      return { success: false, error: 'Cupom não pertence a esta loja/parceiro.' };
+    }
+
     if (cupom.quantidade_disponivel <= 0) return { success: false, error: 'Cupom não disponível' };
+
+    // Validar campanha ativa e dentro do período, se houver campanha
+    if (cupom.campanha_id) {
+      const { data: campanha, error: campError } = await supabase
+        .from('campanhas')
+        .select('id, ativa, data_inicio, data_fim')
+        .eq('id', cupom.campanha_id)
+        .single();
+      if (campError) throw campError;
+      if (!campanha) return { success: false, error: 'Campanha não encontrada' };
+
+      const hoje = new Date();
+      const inicio = campanha.data_inicio ? new Date(campanha.data_inicio) : null;
+      const fim = campanha.data_fim ? new Date(campanha.data_fim) : null;
+
+      if (campanha.ativa === false) return { success: false, error: 'Campanha inativa' };
+      if (inicio && hoje < inicio) return { success: false, error: 'Campanha ainda não começou' };
+      if (fim && hoje > fim) return { success: false, error: 'Campanha encerrada' };
+    }
 
     const hoje = new Date();
     if (hoje > new Date(cupom.data_validade)) return { success: false, error: 'Cupom expirado' };

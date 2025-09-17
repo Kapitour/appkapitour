@@ -9,7 +9,7 @@ import {
   Modal,
   TextInput,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAuth } from "../contexts/AuthContext";
@@ -87,11 +87,8 @@ const AreaUsuario = () => {
     fetchUserInfo();
   }, [user]);
 
-  // Carregar cupons ou histórico dependendo do tipo de usuário
-  useEffect(() => {
+  const fetchCuponsOuHistorico = async () => {
     if (!userInfo) return;
-
-    const fetchCuponsOuHistorico = async () => {
       setLoadingCupons(true);
       try {
         if (userInfo.tipo_usuario_id === 2) {
@@ -107,7 +104,7 @@ const AreaUsuario = () => {
         } else if (userInfo.tipo_usuario_id === 1 || userInfo.tipo_usuario_id === 3) {
           // Admin ou usuário comum: cupons disponíveis e resgatados
           const [cuponsResult, resgatadosResult] = await Promise.all([
-            buscarCuponsDisponiveis(userInfo.id),
+            buscarCuponsDisponiveis(),
             buscarCuponsResgatados(userInfo.id),
           ]);
           if (cuponsResult.success) setCuponsDisponiveis(cuponsResult.data);
@@ -118,10 +115,20 @@ const AreaUsuario = () => {
       } finally {
         setLoadingCupons(false);
       }
-    };
+  };
 
+  // Ao mudar userInfo, carregar listas
+  useEffect(() => {
     fetchCuponsOuHistorico();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userInfo]);
+
+  // Ao voltar para a tela, atualizar listas (após resgates)
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchCuponsOuHistorico();
+    }, [userInfo])
+  );
 
   const getTipoUsuarioText = (tipoId) => {
     switch (tipoId) {

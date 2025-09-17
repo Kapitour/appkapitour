@@ -23,6 +23,7 @@ const LeitorQR = () => {
   const [usuarioEscaneado, setUsuarioEscaneado] = useState(null);
   const [loading, setLoading] = useState(false);
   const [redeemingId, setRedeemingId] = useState(null);
+  const [cupomSelecionado, setCupomSelecionado] = useState(null);
 
   // 👇 trava de leitura
   const [scanned, setScanned] = useState(false);
@@ -108,7 +109,7 @@ const LeitorQR = () => {
       }
 
       // 3) Resgatar
-      const result = await resgatarCupom(cupom.id, usuarioEscaneado.id);
+      const result = await resgatarCupom(cupom.id, usuarioEscaneado.id, userInfo.id);
       if (!result.success) throw new Error(result.error);
 
       Alert.alert('Sucesso', 'Cupom resgatado com sucesso!', [
@@ -210,15 +211,25 @@ const LeitorQR = () => {
                   cuponsDisponiveis.map((c) => (
                     <TouchableOpacity
                       key={c.id}
-                      style={[styles.couponItem, redeemingId === c.id && { opacity: 0.6 }]}
+                      style={[
+                        styles.couponItem,
+                        (cupomSelecionado?.id === c.id) && styles.couponItemSelected,
+                        redeemingId === c.id && { opacity: 0.6 }
+                      ]}
                       disabled={!!redeemingId}
-                      onPress={() => handleRedeem(c)}
+                      onPress={() => setCupomSelecionado(c)}
                     >
                       <Text style={{ fontWeight: 'bold' }}>{c.codigo}</Text>
                       <Text>{c.descricao}</Text>
                       <Text>Disponíveis: {c.quantidade_disponivel}</Text>
                       {c.campanha?.nome ? (
                         <Text>Campanha: {c.campanha.nome}</Text>
+                      ) : null}
+                      {c.campanha ? (
+                        <Text>
+                          {c.campanha.data_inicio ? `Início: ${c.campanha.data_inicio}` : ''}
+                          {c.campanha.data_fim ? `  Fim: ${c.campanha.data_fim}` : ''}
+                        </Text>
                       ) : null}
                     </TouchableOpacity>
                   ))
@@ -237,6 +248,16 @@ const LeitorQR = () => {
             >
               <Text style={styles.closeButtonText}>Fechar</Text>
             </TouchableOpacity>
+
+            {cupomSelecionado && (
+              <TouchableOpacity
+                style={[styles.closeButton, { marginTop: 10, backgroundColor: '#2e7d32' }]}
+                disabled={!!redeemingId}
+                onPress={() => handleRedeem(cupomSelecionado)}
+              >
+                <Text style={styles.closeButtonText}>Confirmar</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       </Modal>
@@ -291,4 +312,15 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   closeButtonText: { color: "#fff", textAlign: "center" },
+  couponItem: {
+    padding: 12,
+    borderRadius: 10,
+    backgroundColor: '#f2f2f2',
+    marginBottom: 10,
+  },
+  couponItemSelected: {
+    backgroundColor: '#ffe6ea',
+    borderColor: '#c83349',
+    borderWidth: 2,
+  },
 });
