@@ -13,7 +13,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../lib/supabase";
-import { buscarCuponsDisponiveis } from "../utils/cupomManager";
+import { buscarCuponsDisponiveis, verificarCupomResgatado, verificarResgatePorCampanha, resgatarCupom } from "../utils/cupomManager";
 
 const LeitorQR = () => {
   const navigation = useNavigation();
@@ -22,6 +22,7 @@ const LeitorQR = () => {
   const [cuponsDisponiveis, setCuponsDisponiveis] = useState([]);
   const [usuarioEscaneado, setUsuarioEscaneado] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [redeemingId, setRedeemingId] = useState(null);
 
   // 👇 trava de leitura
   const [scanned, setScanned] = useState(false);
@@ -63,7 +64,7 @@ const LeitorQR = () => {
       const { data: usuario, error: usuarioError } = await supabase
         .from("usuarios")
         .select("*")
-        .eq("id", data)
+        .eq("auth_id", data)
         .single();
 
       if (usuarioError) throw usuarioError;
@@ -80,6 +81,53 @@ const LeitorQR = () => {
       ]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRedeem = async (cupom) => {
+    if (!usuarioEscaneado) return;
+    try {
+      setRedeemingId(cupom.id);
+
+      // 1) Impedir resgate repetido do mesmo cupom
+      const checkCupom = await verificarCupomResgatado(cupom.id, usuarioEscaneado.id);
+      if (!checkCupom.success) throw new Error(checkCupom.error);
+      if (checkCupom.jaResgatado) {
+        Alert.alert('Atenção', 'Este usuário já resgatou este cupom.');
+        return;
+      }
+
+      // 2) Impedir resgate repetido na mesma campanha
+      if (cupom.campanha_id) {
+        const checkCampanha = await verificarResgatePorCampanha(cupom.campanha_id, usuarioEscaneado.id);
+        if (!checkCampanha.success) throw new Error(checkCampanha.error);
+        if (checkCampanha.jaResgatouCampanha) {
+          Alert.alert('Atenção', 'Este usuário já resgatou um cupom desta campanha.');
+          return;
+        }
+      }
+
+      // 3) Resgatar
+      const result = await resgatarCupom(cupom.id, usuarioEscaneado.id);
+      if (!result.success) throw new Error(result.error);
+
+      Alert.alert('Sucesso', 'Cupom resgatado com sucesso!', [
+        {
+          text: 'OK',
+          onPress: () => {
+            setShowCuponsModal(false);
+            setScanned(false);
+            setUsuarioEscaneado(null);
+            // Voltar para área do usuário
+            navigation.goBack();
+          }
+        }
+      ]);
+    } catch (error) {
+      console.error('Erro ao resgatar:', error);
+      Alert.alert('Erro', error.message || 'Não foi possível resgatar o cupom.');
+    } finally {
+      setRedeemingId(null);
     }
   };
 
@@ -153,7 +201,29 @@ const LeitorQR = () => {
               Usuário Escaneado:
             </Text>
             {usuarioEscaneado ? (
-              <Text>{usuarioEscaneado.nome}</Text>
+              <>
+                <Text style={{ marginBottom: 12 }}>{usuarioEscaneado.nome}</Text>
+                <Text style={{ fontWeight: 'bold', marginBottom: 8 }}>Selecione um cupom para resgatar:</Text>
+                {cuponsDisponiveis.length === 0 ? (
+                  <Text>Não há cupons disponíveis.</Text>
+                ) : (
+                  cuponsDisponiveis.map((c) => (
+                    <TouchableOpacity
+                      key={c.id}
+                      style={[styles.couponItem, redeemingId === c.id && { opacity: 0.6 }]}
+                      disabled={!!redeemingId}
+                      onPress={() => handleRedeem(c)}
+                    >
+                      <Text style={{ fontWeight: 'bold' }}>{c.codigo}</Text>
+                      <Text>{c.descricao}</Text>
+                      <Text>Disponíveis: {c.quantidade_disponivel}</Text>
+                      {c.campanha?.nome ? (
+                        <Text>Campanha: {c.campanha.nome}</Text>
+                      ) : null}
+                    </TouchableOpacity>
+                  ))
+                )}
+              </>
             ) : (
               <Text>Nenhum usuário encontrado</Text>
             )}

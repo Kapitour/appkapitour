@@ -11,6 +11,7 @@ export const buscarCuponsDisponiveis = async (usuarioId) => {
         descricao,
         data_validade,
         quantidade_disponivel,
+        campanha_id,
         campanha:campanhas(nome)
       `)
       .gt('quantidade_disponivel', 0);
@@ -99,6 +100,28 @@ export const verificarCupomResgatado = async (cupomId, usuarioId) => {
     return { success: true, jaResgatado: !!data, data };
   } catch (error) {
     console.error('Erro ao verificar cupom resgatado:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// Verificar se um usuário já resgatou qualquer cupom dessa campanha
+export const verificarResgatePorCampanha = async (campanhaId, usuarioId) => {
+  try {
+    const { data, error } = await supabase
+      .from('cupons_resgatados')
+      .select(`
+        id,
+        cupom:cupons!cupons_resgatados_cupom_id_fkey(campanha_id)
+      `)
+      .eq('usuario_id', usuarioId)
+      .eq('cupom.campanha_id', campanhaId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') throw error;
+
+    return { success: true, jaResgatouCampanha: !!data };
+  } catch (error) {
+    console.error('Erro ao verificar resgate por campanha:', error);
     return { success: false, error: error.message };
   }
 };
