@@ -7,7 +7,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { StyleSheet, View, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { useAuth } from "./hooks/useAuth";
 
 // Telas
 import Home from "./Screens/Home";
@@ -150,12 +150,10 @@ export default function App() {
   }, []);
 
   return (
-    <AuthProvider>
-      <NavigationContainer>
-        <StatusBar hidden />
-        <NavigationContent />
-      </NavigationContainer>
-    </AuthProvider>
+    <NavigationContainer>
+      <StatusBar hidden />
+      <NavigationContent />
+    </NavigationContainer>
   );
 }
 

@@ -12,7 +12,7 @@ import {
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "../hooks/useAuth";
 import QRCode from "react-native-qrcode-svg";
 import { supabase } from "../lib/supabase";
 import {

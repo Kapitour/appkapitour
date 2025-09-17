@@ -11,7 +11,7 @@ import { useNavigation } from "@react-navigation/native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { CameraView, useCameraPermissions } from "expo-camera";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "../hooks/useAuth";
 import { supabase } from "../lib/supabase";
 import { buscarCuponsDisponiveis, verificarCupomResgatado, verificarResgatePorCampanha, resgatarCupom } from "../utils/cupomManager";
 

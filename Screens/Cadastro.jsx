@@ -71,13 +71,79 @@ export default function Cadastro() {
     return formatted;
   };
 
+  const formatDataNascimento = (text) => {
+    // Remove tudo que não é número
+    const cleaned = text.replace(/\D/g, "").slice(0, 8);
+    
+    // Aplica a máscara DD/MM/AAAA automaticamente
+    if (cleaned.length === 0) {
+      return "";
+    } else if (cleaned.length <= 2) {
+      return cleaned;
+    } else if (cleaned.length <= 4) {
+      return cleaned.replace(/(\d{2})(\d{1,2})/, "$1/$2");
+    } else {
+      return cleaned.replace(/(\d{2})(\d{2})(\d{1,4})/, "$1/$2/$3");
+    }
+  };
+
+  const convertToDate = (dateString) => {
+    // Converte DD/MM/AAAA para AAAA-MM-DD
+    const parts = dateString.split('/');
+    if (parts.length === 3) {
+      const [day, month, year] = parts;
+      
+      // Validar se os valores são válidos
+      const dayNum = parseInt(day, 10);
+      const monthNum = parseInt(month, 10);
+      const yearNum = parseInt(year, 10);
+      
+      // Validações básicas
+      if (dayNum < 1 || dayNum > 31) {
+        throw new Error("Dia inválido");
+      }
+      if (monthNum < 1 || monthNum > 12) {
+        throw new Error("Mês inválido");
+      }
+      if (yearNum < 1900 || yearNum > new Date().getFullYear()) {
+        throw new Error("Ano inválido");
+      }
+      
+      // Verificar se a data existe (ex: 29/02/2023)
+      const date = new Date(yearNum, monthNum - 1, dayNum);
+      if (date.getDate() !== dayNum || date.getMonth() !== monthNum - 1 || date.getFullYear() !== yearNum) {
+        throw new Error("Data inválida");
+      }
+      
+      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    }
+    throw new Error("Formato de data inválido");
+  };
+
   const handleSexoChange = (value) => {
     setSexo(value === sexo ? "" : value);
+    console.log("Sexo selecionado:", value);
   };
 
   const handleRegister = async () => {
     if (!name || !email || !cpf || !sexo || !password || !nascimento) {
       alert("Preencha todos os campos.");
+      return;
+    }
+
+    // Validar formato da data de nascimento
+    if (nascimento.length !== 10 || !nascimento.includes('/')) {
+      alert("Data de nascimento deve estar no formato DD/MM/AAAA");
+      return;
+    }
+
+    // Validar e converter a data
+    let dataNascimentoFormatada;
+    try {
+      dataNascimentoFormatada = convertToDate(nascimento);
+      console.log("Data convertida:", dataNascimentoFormatada);
+    } catch (error) {
+      alert(`Erro na data de nascimento: ${error.message}`);
       return;
     }
     try {
@@ -119,22 +185,52 @@ export default function Cadastro() {
       const user = data.user;
 
       if (user) {
-        // Insere os dados na tabela usuarios
-        const { error: insertError } = await supabase.from("usuarios").insert([
-          {
-            auth_id: user.id, // vem do Supabase Auth
-            nome: name,
-            email: email,
-            cpf: cpf,
-            sexo: sexo,
-            data_nascimento: nascimento,
-            data_criacao: new Date().toISOString(),
-          },
-        ]);
+        console.log("Usuário criado no Auth:", user.id);
+        
+        // Tenta inserir dados na tabela usuarios
+        const userData = {
+          auth_id: user.id,
+          nome: name,
+          email: email,
+          cpf: cpf,
+          sexo: sexo,
+          data_nascimento: dataNascimentoFormatada, // Usar data já validada e formatada
+          data_criacao: new Date().toISOString(),
+          tipo_usuario_id: 3, // Usuário Comum por padrão
+        };
+        
+        console.log("Dados para inserir:", userData);
+        
+        const { data: insertData, error: insertError } = await supabase
+          .from("usuarios")
+          .insert([userData])
+          .select();
 
         if (insertError) {
-          alert("Erro ao inserir dados do usuário: " + insertError.message);
-          return;
+          console.error("Erro ao inserir dados do usuário:", insertError);
+          
+          // Se falhar, tenta usar função como fallback
+          console.log("Tentando usar função como fallback...");
+          const { data: functionResult, error: functionError } = await supabase
+            .rpc('create_user_complete', {
+              p_auth_id: user.id,
+              p_nome: name,
+              p_email: email,
+              p_cpf: cpf,
+              p_sexo: sexo,
+              p_data_nascimento: dataNascimentoFormatada,
+              p_data_criacao: new Date().toISOString()
+            });
+
+          if (functionError) {
+            console.error("Erro na função também:", functionError);
+            alert("Erro ao inserir dados do usuário: " + insertError.message);
+            return;
+          }
+          
+          console.log("Dados inseridos com sucesso via função:", functionResult);
+        } else {
+          console.log("Dados inseridos com sucesso:", insertData);
         }
 
         // Envia e-mail de confirmação (use o método correto para sua versão do Supabase)
@@ -273,8 +369,10 @@ export default function Cadastro() {
                 placeholder="DD/MM/AAAA"
                 style={styles.input}
                 value={nascimento}
-                onChangeText={setNascimento}
+                onChangeText={(text) => setNascimento(formatDataNascimento(text))}
                 keyboardType="numeric"
+                maxLength={10}
+                autoComplete="birthdate-full"
               />
 
               <TouchableOpacity style={styles.button} onPress={handleRegister}>
