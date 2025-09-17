@@ -16,7 +16,7 @@ export default function BottomMenu() {
   return (
     <View style={[styles.menuContainer, { width: width - 60 }]}>
       {" "}
-      {/* Responsividade */}
+      {/* Responsividade   */}
       <TouchableOpacity
         onPress={() => navigation.navigate("Home")}
         accessibilityLabel="Ir para Home"
