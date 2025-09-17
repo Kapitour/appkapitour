@@ -51,7 +51,6 @@ const AreaUsuario = () => {
   useEffect(() => {
     if (!user?.id) {
       setLoading(false);
-      Alert.alert("Erro", "Usuário não autenticado. Faça login novamente.");
       return;
     }
 
@@ -191,7 +190,7 @@ const AreaUsuario = () => {
             <InfoRow icon="account-circle-outline" label="Nome" value={nome} />
             <InfoRow icon="email-outline" label="Email" value={email} />
             <InfoRow icon="card-account-details-outline" label="CPF" value={cpf} />
-            <InfoRow icon="shield-account-outline" label="Tipo" value={getTipoUsuarioText(tipoUsuarioId)} />
+    
 
             <TouchableOpacity style={styles.editButton} onPress={() => setShowEditModal(true)}>
               <MaterialCommunityIcons name="pencil" size={20} color="#333" />
@@ -396,7 +395,6 @@ const AreaUsuario = () => {
             <Text style={styles.modalTitle}>Editar Perfil</Text>
             <TextInput style={styles.input} value={nome} onChangeText={setNome} placeholder="Nome" />
             <TextInput style={styles.input} value={email} onChangeText={setEmail} placeholder="Email" />
-            <TextInput style={styles.input} value={cpf} onChangeText={setCpf} placeholder="CPF" />
             <TextInput style={styles.input} value={sexo} onChangeText={setSexo} placeholder="Sexo" />
             <TouchableOpacity style={styles.saveButton} onPress={() => atualizarUsuario(userInfo?.auth_id, { nome, email, cpf, sexo })}>
               <Text style={styles.saveButtonText}>Salvar</Text>
