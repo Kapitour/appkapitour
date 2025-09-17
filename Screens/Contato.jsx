@@ -13,7 +13,6 @@ import {
 } from "react-native";
 import { FontAwesome } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import fundo from "../assets/contatoFundo.png";
 
 const Contato = () => {
   const [showForm, setShowForm] = useState(false);
@@ -47,118 +46,103 @@ const Contato = () => {
 
   return (
     <View style={{ flex: 1 }}>
-      <Animated.Image
-        source={fundo}
-        style={[styles.fundoimg]}
-        resizeMode="cover"
-        blurRadius={1}
+      {/* Gradiente fixo no fundo */}
+      <LinearGradient
+        colors={["#c3073f", "#1a1a2e"]} // vermelho e azul escuro  Não esquecer a cor padrão
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={styles.gradient}
       />
 
-      <ScrollView
-        contentContainerStyle={styles.container}
-        keyboardShouldPersistTaps="handled"
-      >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-        >
-          <LinearGradient
-            colors={["#c3073f", "#1a1a2e"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 0, y: 1 }}
-            style={styles.overlay}
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"}>
+          <Animated.Text
+            style={[
+              styles.title,
+              {
+                transform: [{ scale }],
+              },
+            ]}
           >
-            <Animated.Text
-              style={[
-                styles.title,
-                {
-                  transform: [{ scale }],
-                },
-              ]}
+            Entre em Contato
+          </Animated.Text>
+
+          <View style={styles.btns}>
+            <TouchableOpacity
+              style={styles.contactItem}
+              onPress={() => handleLinkPress("tel:+5521983581550")}
             >
-              Entre em Contato
-            </Animated.Text>
-
-            <View style={styles.btns}>
-              <TouchableOpacity
-                style={styles.contactItem}
-                onPress={() => handleLinkPress("tel:+5521983581550")}
-              >
-                <View style={styles.iconCircle}>
-                  <FontAwesome name="phone" size={20} color="#fff" />
-                </View>
-                <Text style={styles.contactText}>(21) 98358-1550</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.contactItem}
-                onPress={() =>
-                  handleLinkPress("mailto:plataformadigitalkapitour@gmail.com")
-                }
-              >
-                <View style={styles.iconCircle}>
-                  <FontAwesome name="envelope" size={20} color="#fff" />
-                </View>
-                <Text style={styles.contactText}>Nosso email</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.contactItem}
-                onPress={() =>
-                  handleLinkPress("https://www.instagram.com/kapi.tour")
-                }
-              >
-                <View style={styles.iconCircle}>
-                  <FontAwesome name="instagram" size={20} color="#fff" />
-                </View>
-                <Text style={styles.contactText}>@kapi.tour</Text>
-              </TouchableOpacity>
-
-              {!showForm && (
-                <TouchableOpacity
-                  style={[styles.contactItem, styles.messageButton]}
-                  onPress={() => setShowForm(true)}
-                >
-                  <View style={styles.iconCircle}>
-                    <FontAwesome name="comment" size={20} color="#fff" />
-                  </View>
-                  <Text style={styles.contactText}>Enviar uma mensagem</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-
-            {showForm && (
-              <View style={styles.form}>
-                <Text style={styles.label}>Nome</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Seu nome"
-                  placeholderTextColor="#ccc"
-                />
-
-                <Text style={styles.label}>Email</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Seu email"
-                  placeholderTextColor="#ccc"
-                  keyboardType="email-address"
-                />
-
-                <Text style={styles.label}>Mensagem</Text>
-                <TextInput
-                  style={styles.textArea}
-                  placeholder="Digite sua mensagem"
-                  placeholderTextColor="#ccc"
-                  multiline
-                  numberOfLines={4}
-                  textAlignVertical="top"
-                />
-
-                <TouchableOpacity style={styles.submitButton}>
-                  <Text style={styles.submitButtonText}>Enviar</Text>
-                </TouchableOpacity>
+              <View style={styles.iconCircle}>
+                <FontAwesome name="phone" size={20} color="#fff" />
               </View>
+              <Text style={styles.contactText}>(21) 98358-1550</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.contactItem}
+              onPress={() => handleLinkPress("mailto:plataformadigitalkapitour@gmail.com")}
+            >
+              <View style={styles.iconCircle}>
+                <FontAwesome name="envelope" size={20} color="#fff" />
+              </View>
+              <Text style={styles.contactText}>Nosso email</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.contactItem}
+              onPress={() => handleLinkPress("https://www.instagram.com/kapi.tour")}
+            >
+              <View style={styles.iconCircle}>
+                <FontAwesome name="instagram" size={20} color="#fff" />
+              </View>
+              <Text style={styles.contactText}>@kapi.tour</Text>
+            </TouchableOpacity>
+
+            {!showForm && (
+              <TouchableOpacity
+                style={[styles.contactItem, styles.messageButton]}
+                onPress={() => setShowForm(true)}
+              >
+                <View style={styles.iconCircle}>
+                  <FontAwesome name="comment" size={20} color="#fff" />
+                </View>
+                <Text style={styles.contactText}>Enviar uma mensagem</Text>
+              </TouchableOpacity>
             )}
-          </LinearGradient>
+          </View>
+
+          {showForm && (
+            <View style={styles.form}>
+              <Text style={styles.label}>Nome</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Seu nome"
+                placeholderTextColor="#ccc"
+              />
+
+              <Text style={styles.label}>Email</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Seu email"
+                placeholderTextColor="#ccc"
+                keyboardType="email-address"
+              />
+
+              <Text style={styles.label}>Mensagem</Text>
+              <TextInput
+                style={styles.textArea}
+                placeholder="Digite sua mensagem"
+                placeholderTextColor="#ccc"
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
+              />
+
+              <TouchableOpacity style={styles.submitButton}>
+                <Text style={styles.submitButtonText}>Enviar</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </KeyboardAvoidingView>
       </ScrollView>
     </View>
@@ -170,21 +154,15 @@ export default Contato;
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
+    paddingBottom: 90,
   },
-  fundoimg: {
-    position: "absolute",
+
+  gradient: {
+    position: "absolute", 
     width: "100%",
-    height: "100%",
+    height: "100%", 
     top: 0,
     left: 0,
-    opacity: 0.25,
-  },
-  overlay: {
-    flexGrow: 1,
-    padding: 16,
-    paddingBottom: 100,
-    alignItems: "center",
-    borderRadius: 0,
   },
   title: {
     fontSize: 28,
@@ -233,18 +211,24 @@ const styles = StyleSheet.create({
   form: {
     width: "100%",
     marginTop: 30,
+    alignItems: "center", 
   },
   label: {
-    color: "#ffffff",
-    fontSize: 14,
+    color: "#f0f0f0",
+    fontWeight: "600",
+    fontSize: 16,
     marginBottom: 6,
-    fontWeight: "500",
+    letterSpacing: 0.5,
+    textShadowColor: "rgba(0, 0, 0, 0.3)",
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 1,
   },
   input: {
+    width: "90%", 
     backgroundColor: "rgba(255,255,255,0.05)",
     color: "#fff",
     paddingVertical: 8,
-    paddingHorizontal: 10,
+    paddingHorizontal: 12, 
     borderRadius: 8,
     borderWidth: 1,
     borderColor: "#444",
@@ -253,9 +237,10 @@ const styles = StyleSheet.create({
     height: 40,
   },
   textArea: {
+    width: "90%",
     backgroundColor: "rgba(255,255,255,0.05)",
     color: "#fff",
-    padding: 10,
+    padding: 12,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: "#444",
@@ -265,10 +250,12 @@ const styles = StyleSheet.create({
     textAlignVertical: "top",
   },
   submitButton: {
+    width: 160, 
     backgroundColor: "#c93434",
-    paddingVertical: 14,
+    paddingVertical: 12, 
     borderRadius: 10,
     alignItems: "center",
+    marginTop: 10,
   },
   submitButtonText: {
     color: "#fff",
