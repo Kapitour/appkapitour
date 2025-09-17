@@ -7,7 +7,6 @@ import {
   Alert,
   ScrollView,
   Modal,
-  Dimensions,
   TextInput,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
@@ -56,7 +55,7 @@ const AreaUsuario = () => {
         const { data, error } = await supabase
           .from("usuarios")
           .select("*")
-          .eq("auth_id", user.id)
+          .eq("auth_id", user.id) // ✅ usar auth_id
           .single();
 
         if (error || !data) {
@@ -92,13 +91,13 @@ const AreaUsuario = () => {
       try {
         if (userInfo.tipo_usuario_id === 2) {
           // Parceiro: histórico de cupons resgatados
-          const historicoResult = await buscarHistoricoResgates(user.id);
+          const historicoResult = await buscarHistoricoResgates(userInfo.id); // filtra pelo id da tabela usuarios
           if (historicoResult.success) setCuponsResgatados(historicoResult.data);
         } else if (userInfo.tipo_usuario_id === 1 || userInfo.tipo_usuario_id === 3) {
           // Admin ou usuário comum: cupons disponíveis e resgatados
           const [cuponsResult, resgatadosResult] = await Promise.all([
-            buscarCuponsDisponiveis(user.id),
-            buscarCuponsResgatados(user.id),
+            buscarCuponsDisponiveis(userInfo.id),
+            buscarCuponsResgatados(userInfo.id),
           ]);
           if (cuponsResult.success) setCuponsDisponiveis(cuponsResult.data);
           if (resgatadosResult.success) setCuponsResgatados(resgatadosResult.data);
@@ -182,7 +181,6 @@ const AreaUsuario = () => {
             </TouchableOpacity>
           </View>
 
-          {/* QR Code apenas para admins e usuários comuns */}
           {tipoUsuarioId === 1 || tipoUsuarioId === 3 ? (
             <View style={styles.qrCodeContainer}>
               <Text style={styles.qrCodeTitle}>Seu QR Code</Text>
@@ -194,7 +192,6 @@ const AreaUsuario = () => {
             </View>
           ) : null}
 
-          {/* Leitor QR apenas para parceiros */}
           {tipoUsuarioId === 2 && (
             <View style={styles.leitorContainer}>
               <Text style={styles.leitorTitle}>Leitor de QR Code</Text>
@@ -209,12 +206,10 @@ const AreaUsuario = () => {
             </View>
           )}
 
-          {/* Botão de cupons */}
           <TouchableOpacity style={styles.cupom} onPress={() => setShowCupons(true)}>
             <Text style={styles.cupomtext}>Meus Cupons</Text>
           </TouchableOpacity>
 
-          {/* Botão de sair fixado no final */}
           <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
             <MaterialCommunityIcons name="logout" size={20} color="#fff" />
             <Text style={styles.logoutButtonText}>Sair</Text>
@@ -222,7 +217,6 @@ const AreaUsuario = () => {
         </View>
       </ScrollView>
 
-      {/* Modais */}
       {renderCuponsModal()}
       {renderQRCodeModal()}
       {renderEditModal()}
@@ -241,7 +235,12 @@ const AreaUsuario = () => {
 
   function renderCuponsModal() {
     return (
-      <Modal visible={showCupons} animationType="slide" transparent={true} onRequestClose={() => setShowCupons(false)}>
+      <Modal
+        visible={showCupons}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowCupons(false)}
+      >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
@@ -250,18 +249,52 @@ const AreaUsuario = () => {
                 <MaterialCommunityIcons name="close" size={24} color="#333" />
               </TouchableOpacity>
             </View>
+
             <ScrollView style={styles.modalBody}>
               {loadingCupons ? (
                 <Text style={styles.loadingText}>Carregando...</Text>
-              ) : cuponsResgatados.length > 0 ? (
-                cuponsResgatados.map((resgate) => (
-                  <View key={resgate.id} style={styles.resgateCard}>
-                    <Text style={styles.resgateCampanha}>{resgate.cupom?.campanha?.nome || `Cupom ${resgate.id}`}</Text>
-                    <Text style={styles.resgateValidade}>Validade: {resgate.cupom?.validade || "-"}</Text>
-                  </View>
-                ))
               ) : (
-                <Text style={styles.loadingText}>Nenhum cupom resgatado</Text>
+                <>
+                  {(tipoUsuarioId === 1 || tipoUsuarioId === 3) && (
+                    <>
+                      <Text style={{ fontWeight: "bold", fontSize: 16, marginBottom: 8 }}>
+                        Disponíveis
+                      </Text>
+                      {cuponsDisponiveis.length > 0 ? (
+                        cuponsDisponiveis.map((cupom) => (
+                          <View key={cupom.id} style={styles.resgateCard}>
+                            <Text style={styles.resgateCampanha}>
+                              {cupom.campanha?.nome || cupom.codigo || `Cupom ${cupom.id}`}
+                            </Text>
+                            <Text style={styles.resgateValidade}>
+                              Validade: {cupom.data_validade || "-"}
+                            </Text>
+                          </View>
+                        ))
+                      ) : (
+                        <Text style={styles.loadingText}>Nenhum cupom disponível</Text>
+                      )}
+                    </>
+                  )}
+
+                  <Text style={{ fontWeight: "bold", fontSize: 16, marginTop: 16, marginBottom: 8 }}>
+                    Resgatados
+                  </Text>
+                  {cuponsResgatados.length > 0 ? (
+                    cuponsResgatados.map((resgate) => (
+                      <View key={resgate.id} style={styles.resgateCard}>
+                        <Text style={styles.resgateCampanha}>
+                          {resgate.cupom?.campanha?.nome || resgate.cupom?.codigo || `Cupom ${resgate.id}`}
+                        </Text>
+                        <Text style={styles.resgateValidade}>
+                          Validade: {resgate.cupom?.data_validade || "-"}
+                        </Text>
+                      </View>
+                    ))
+                  ) : (
+                    <Text style={styles.loadingText}>Nenhum cupom resgatado</Text>
+                  )}
+                </>
               )}
             </ScrollView>
           </View>
@@ -275,7 +308,7 @@ const AreaUsuario = () => {
       <Modal visible={showQRCode} animationType="fade" transparent={true} onRequestClose={() => setShowQRCode(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.qrModalContent}>
-            <QRCode value={user.id} size={200} />
+            <QRCode value={userInfo?.auth_id || ""} size={200} />
             <TouchableOpacity onPress={() => setShowQRCode(false)} style={styles.closeButtonQRCode}>
               <MaterialCommunityIcons name="close" size={24} color="#333" />
             </TouchableOpacity>
@@ -295,7 +328,7 @@ const AreaUsuario = () => {
             <TextInput style={styles.input} value={email} onChangeText={setEmail} placeholder="Email" />
             <TextInput style={styles.input} value={cpf} onChangeText={setCpf} placeholder="CPF" />
             <TextInput style={styles.input} value={sexo} onChangeText={setSexo} placeholder="Sexo" />
-            <TouchableOpacity style={styles.saveButton} onPress={() => atualizarUsuario(user.id, { nome, email, cpf, sexo })}>
+            <TouchableOpacity style={styles.saveButton} onPress={() => atualizarUsuario(userInfo?.auth_id, { nome, email, cpf, sexo })}>
               <Text style={styles.saveButtonText}>Salvar</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.closeButton} onPress={() => setShowEditModal(false)}>
@@ -349,7 +382,6 @@ const styles = StyleSheet.create({
   saveButton: { backgroundColor: "#c83349", padding: 12, borderRadius: 8, alignItems: "center", marginTop: 10 },
   saveButtonText: { color: "#fff", fontWeight: "bold" },
   loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
-  loadingText: { color: "#fff", fontWeight: "bold" },
   errorContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
   errorText: { color: "#fff", fontWeight: "bold", marginBottom: 10 },
 });

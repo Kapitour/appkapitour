@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   Alert,
   Modal,
-  ScrollView,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -14,10 +13,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../lib/supabase";
-import {
-  buscarCuponsDisponiveis,
-  resgatarCupom,
-} from "../utils/cupomManager";
+import { buscarCuponsDisponiveis } from "../utils/cupomManager";
 
 const LeitorQR = () => {
   const navigation = useNavigation();
@@ -27,7 +23,9 @@ const LeitorQR = () => {
   const [usuarioEscaneado, setUsuarioEscaneado] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // 👇 camera
+  // 👇 trava de leitura
+  const [scanned, setScanned] = useState(false);
+
   const [facing, setFacing] = useState("back");
   const [permission, requestPermission] = useCameraPermissions();
 
@@ -56,10 +54,12 @@ const LeitorQR = () => {
   };
 
   const handleQRCodeScanned = async ({ data }) => {
+    if (scanned) return; // 👈 impede leitura múltipla
+    setScanned(true); // trava até o usuário fechar modal ou alerta
+
     try {
       setLoading(true);
 
-      // O "data" vem do QR code. Aqui assumo que é o ID do usuário
       const { data: usuario, error: usuarioError } = await supabase
         .from("usuarios")
         .select("*")
@@ -72,16 +72,18 @@ const LeitorQR = () => {
       setShowCuponsModal(true);
     } catch (error) {
       console.error("Erro ao processar QR Code:", error);
-      Alert.alert("Erro", "Não foi possível processar o QR Code");
+      Alert.alert("Erro", "Não foi possível processar o QR Code", [
+        {
+          text: "OK",
+          onPress: () => setScanned(false), // 👈 libera leitura de novo
+        },
+      ]);
     } finally {
       setLoading(false);
     }
   };
 
-  if (!permission) {
-    return <View />;
-  }
-
+  if (!permission) return <View />;
   if (!permission.granted) {
     return (
       <View style={styles.container}>
@@ -105,6 +107,7 @@ const LeitorQR = () => {
       end={{ x: 1, y: 1 }}
       style={styles.container}
     >
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
@@ -115,15 +118,13 @@ const LeitorQR = () => {
         <Text style={styles.headerTitle}>Leitor de QR Code</Text>
       </View>
 
+      {/* Câmera */}
       <View style={styles.content}>
-        {/* 👇 substitui ícone por câmera */}
         <CameraView
           style={styles.camera}
           facing={facing}
-          onBarcodeScanned={handleQRCodeScanned}
-          barcodeScannerSettings={{
-            barCodeTypes: ["qr"],
-          }}
+          onBarcodeScanned={scanned ? undefined : handleQRCodeScanned} // 👈 só chama se não estiver travado
+          barcodeScannerSettings={{ barCodeTypes: ["qr"] }}
         />
 
         <TouchableOpacity
@@ -141,11 +142,31 @@ const LeitorQR = () => {
         visible={showCuponsModal}
         animationType="slide"
         transparent={true}
-        onRequestClose={() => setShowCuponsModal(false)}
+        onRequestClose={() => {
+          setShowCuponsModal(false);
+          setScanned(false); // 👈 libera nova leitura quando fecha modal
+        }}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            {/* ... aqui mantém igual ao seu modal anterior ... */}
+            <Text style={{ fontSize: 18, marginBottom: 10 }}>
+              Usuário Escaneado:
+            </Text>
+            {usuarioEscaneado ? (
+              <Text>{usuarioEscaneado.nome}</Text>
+            ) : (
+              <Text>Nenhum usuário encontrado</Text>
+            )}
+
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => {
+                setShowCuponsModal(false);
+                setScanned(false); // 👈 libera leitura de novo
+              }}
+            >
+              <Text style={styles.closeButtonText}>Fechar</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -160,7 +181,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 16,
+    padding: 40,
   },
   headerTitle: { color: "#fff", fontSize: 18, marginLeft: 8 },
   content: { flex: 1 },
@@ -170,7 +191,7 @@ const styles = StyleSheet.create({
     bottom: 32,
     alignSelf: "center",
     backgroundColor: "rgba(0,0,0,0.5)",
-    padding: 12,
+    padding: 20,
     borderRadius: 50,
   },
   message: { textAlign: "center", marginTop: 50, color: "#fff" },
@@ -193,4 +214,11 @@ const styles = StyleSheet.create({
     margin: 20,
     padding: 20,
   },
+  closeButton: {
+    marginTop: 20,
+    backgroundColor: "#c83349",
+    padding: 12,
+    borderRadius: 8,
+  },
+  closeButtonText: { color: "#fff", textAlign: "center" },
 });
