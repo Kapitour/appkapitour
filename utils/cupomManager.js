@@ -162,3 +162,61 @@ export const resgatarCupom = async (cupomId, usuarioId) => {
     return { success: false, error: error.message };
   }
 };
+
+// Buscar campanhas associadas a um parceiro (parceiro_id em cupons)
+export const buscarCampanhasDoParceiro = async (parceiroUsuarioId) => {
+  try {
+    // Pegar campanhas distintas em que existam cupons do parceiro
+    const { data, error } = await supabase
+      .from('cupons')
+      .select(`
+        campanha_id,
+        campanha:campanhas(
+          id,
+          nome,
+          descricao,
+          data_inicio,
+          data_fim,
+          ativa
+        )
+      `)
+      .eq('parceiro_id', parceiroUsuarioId);
+
+    if (error) throw error;
+
+    const campanhasMap = new Map();
+    (data || []).forEach((row) => {
+      if (row.campanha && !campanhasMap.has(row.campanha.id)) {
+        campanhasMap.set(row.campanha.id, row.campanha);
+      }
+    });
+
+    return { success: true, data: Array.from(campanhasMap.values()) };
+  } catch (error) {
+    console.error('Erro ao buscar campanhas do parceiro:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// Contagem de cupons disponíveis por campanha para um parceiro
+export const buscarContagemCuponsPorCampanha = async (parceiroUsuarioId) => {
+  try {
+    const { data, error } = await supabase
+      .from('cupons')
+      .select('campanha_id, quantidade_disponivel')
+      .eq('parceiro_id', parceiroUsuarioId);
+
+    if (error) throw error;
+
+    const contagem = new Map();
+    (data || []).forEach((row) => {
+      const atual = contagem.get(row.campanha_id) || 0;
+      contagem.set(row.campanha_id, atual + (row.quantidade_disponivel || 0));
+    });
+
+    return { success: true, data: Object.fromEntries(contagem) };
+  } catch (error) {
+    console.error('Erro ao contar cupons por campanha:', error);
+    return { success: false, error: error.message };
+  }
+};

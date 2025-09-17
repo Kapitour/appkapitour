@@ -19,6 +19,8 @@ import {
   buscarCuponsDisponiveis,
   buscarCuponsResgatados,
   buscarHistoricoResgates,
+  buscarCampanhasDoParceiro,
+  buscarContagemCuponsPorCampanha,
   atualizarUsuario,
 } from "../utils/cupomManager";
 
@@ -29,10 +31,13 @@ const AreaUsuario = () => {
 
   const [showQRCode, setShowQRCode] = useState(false);
   const [showCupons, setShowCupons] = useState(false);
+  const [showCampanhas, setShowCampanhas] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
 
   const [cuponsDisponiveis, setCuponsDisponiveis] = useState([]);
   const [cuponsResgatados, setCuponsResgatados] = useState([]);
+  const [campanhasParceiro, setCampanhasParceiro] = useState([]);
+  const [contagemCampanhas, setContagemCampanhas] = useState({});
   const [loadingCupons, setLoadingCupons] = useState(false);
 
   const [nome, setNome] = useState("");
@@ -90,9 +95,15 @@ const AreaUsuario = () => {
       setLoadingCupons(true);
       try {
         if (userInfo.tipo_usuario_id === 2) {
-          // Parceiro: histórico de cupons resgatados
+          // Parceiro: histórico de cupons resgatados + campanhas
           const historicoResult = await buscarHistoricoResgates(userInfo.id); // filtra pelo id da tabela usuarios
           if (historicoResult.success) setCuponsResgatados(historicoResult.data);
+
+          const campanhasResult = await buscarCampanhasDoParceiro(userInfo.id);
+          if (campanhasResult.success) setCampanhasParceiro(campanhasResult.data);
+
+          const contagemResult = await buscarContagemCuponsPorCampanha(userInfo.id);
+          if (contagemResult.success) setContagemCampanhas(contagemResult.data);
         } else if (userInfo.tipo_usuario_id === 1 || userInfo.tipo_usuario_id === 3) {
           // Admin ou usuário comum: cupons disponíveis e resgatados
           const [cuponsResult, resgatadosResult] = await Promise.all([
@@ -206,9 +217,15 @@ const AreaUsuario = () => {
             </View>
           )}
 
-          <TouchableOpacity style={styles.cupom} onPress={() => setShowCupons(true)}>
-            <Text style={styles.cupomtext}>Meus Cupons</Text>
-          </TouchableOpacity>
+          {tipoUsuarioId === 2 ? (
+            <TouchableOpacity style={styles.cupom} onPress={() => setShowCampanhas(true)}>
+              <Text style={styles.cupomtext}>Minhas Campanhas</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity style={styles.cupom} onPress={() => setShowCupons(true)}>
+              <Text style={styles.cupomtext}>Meus Cupons</Text>
+            </TouchableOpacity>
+          )}
 
           <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
             <MaterialCommunityIcons name="logout" size={20} color="#fff" />
@@ -218,6 +235,7 @@ const AreaUsuario = () => {
       </ScrollView>
 
       {renderCuponsModal()}
+      {renderCampanhasModal()}
       {renderQRCodeModal()}
       {renderEditModal()}
     </LinearGradient>
@@ -295,6 +313,51 @@ const AreaUsuario = () => {
                     <Text style={styles.loadingText}>Nenhum cupom resgatado</Text>
                   )}
                 </>
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+    );
+  }
+
+  function renderCampanhasModal() {
+    return (
+      <Modal
+        visible={showCampanhas}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowCampanhas(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Minhas Campanhas</Text>
+              <TouchableOpacity onPress={() => setShowCampanhas(false)} style={styles.closeButton}>
+                <MaterialCommunityIcons name="close" size={24} color="#333" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalBody}>
+              {loadingCupons ? (
+                <Text style={styles.loadingText}>Carregando...</Text>
+              ) : campanhasParceiro.length > 0 ? (
+                campanhasParceiro.map((camp) => (
+                  <View key={camp.id} style={styles.resgateCard}>
+                    <Text style={styles.resgateCampanha}>{camp.nome}</Text>
+                    {camp.descricao ? <Text style={styles.resgateValidade}>{camp.descricao}</Text> : null}
+                    <Text style={styles.resgateValidade}>
+                      {camp.data_inicio ? `Início: ${camp.data_inicio}` : ''}
+                      {camp.data_fim ? `  Fim: ${camp.data_fim}` : ''}
+                    </Text>
+                    <Text style={styles.resgateValidade}>Status: {camp.ativa ? 'Ativa' : 'Inativa'}</Text>
+                    <Text style={styles.resgateValidade}>
+                      Disponíveis: {contagemCampanhas[camp.id] ?? 0}
+                    </Text>
+                  </View>
+                ))
+              ) : (
+                <Text style={styles.loadingText}>Nenhuma campanha encontrada.</Text>
               )}
             </ScrollView>
           </View>
