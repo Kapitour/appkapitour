@@ -171,7 +171,11 @@ export default function MapaHome({ categoriaId }) {
             <Text style={styles.desc}>{selectedPonto.descricao}</Text>
           </>
         ) : (
-          <Text style={styles.title}>Selecione um ponto turístico no mapa</Text>
+          <Text style={styles.title} numberOfLines={1} adjustsFontSizeToFit>
+  Selecione um ponto turístico no Mapa.
+</Text>
+
+
         )}
       </View>
 
@@ -198,14 +202,22 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   infoCard: {
-    backgroundColor: "#c83349",
-    width: 350,
-    minHeight: 200,
-    padding: 10,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  backgroundColor: "#2c233842", // tom mais escuro e opaco
+  width: 340,
+  minHeight: 150,
+  padding: 20,
+  borderRadius: 24,
+  alignItems: "center",
+  justifyContent: "center",
+  shadowColor: "#00000092",
+  shadowOffset: { width: 0, height: 6 },
+  shadowOpacity: 0.18,
+  shadowRadius: 12,
+  elevation: 8,
+  borderWidth: 1,
+  borderColor: "#f7a000",
+},
+// ...adicione estilos para textos e ícones dentro do card para melhor visual!
   img: {
     width: "100%",
     height: 150,

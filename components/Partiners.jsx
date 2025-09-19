@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -6,187 +6,194 @@ import {
   TouchableOpacity,
   Linking,
   Animated,
-  ScrollView,
-  StyleSheet,
+  FlatList,
   Dimensions,
+  StyleSheet,
 } from "react-native";
 
+const { width } = Dimensions.get("window");
+
+const data = [
+  {
+    id: "1",
+    title: "AGM Maricá",
+    description:
+      "Parceria com a AGM Associação dos Guias de Turismo de Maricá. Conheça os melhores guias para sua experiência!",
+    imageUri:
+      "https://github.com/Kapitour/Imgs-Padr-o/blob/main/home/agm.png?raw=true",
+    buttonText: "Guias de Turismo",
+    onPress: () =>
+      Linking.openURL(
+        "https://wa.me/5521971292030?text=Olá%20vim%20pela%20Kapitour%20e%20gostaria%20de%20contratar%20um%20guia%20de%20turismo!"
+      ),
+    style: "circle",
+  },
+  {
+    id: "2",
+    title: "Vassouras Tec",
+    description:
+      "Vassouras Tec, incubadora tecnológica da Univassouras. Inovação e tecnologia para o turismo!",
+    imageUri:
+      "https://github.com/Kapitour/Imgs-Padr-o/blob/main/VassourasT%C3%A9c.png?raw=true",
+    style: "incubadora",
+  },
+];
+
+const CARD_WIDTH = width * 0.6;
+const SPACING = 15;
+
 const Partiners = () => {
-  const titleAnim = useRef(new Animated.Value(0)).current;
-  const card1Anim = useRef(new Animated.Value(0)).current;
-  const card2Anim = useRef(new Animated.Value(0)).current;
+  const flatListRef = useRef(null);
+  const scrollX = useRef(new Animated.Value(0)).current;
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
-    Animated.sequence([
-      Animated.timing(titleAnim, {
-        toValue: 1,
-        duration: 800,
-        useNativeDriver: true,
-      }),
-      Animated.stagger(200, [
-        Animated.timing(card1Anim, {
-          toValue: 1,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-        Animated.timing(card2Anim, {
-          toValue: 1,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-      ]),
-    ]).start();
-  }, []);
+    const interval = setInterval(() => {
+      let nextIndex = (currentIndex + 1) % data.length;
+      flatListRef.current?.scrollToIndex({ index: nextIndex, animated: true });
+      setCurrentIndex(nextIndex);
+    }, 4000);
 
-  const openWhatsApp = () => {
-    Linking.openURL(
-      "https://wa.me/5521971292030?text=Olá%20vim%20pela%20Kapitour%20e%20gostaria%20de%20contratar%20um%20guia%20de%20turismo!"
-    );
-  };
+    return () => clearInterval(interval);
+  }, [currentIndex]);
+
+  const renderItem = ({ item }) => (
+    <View style={styles.card}>
+      <Image
+        source={{ uri: item.imageUri }}
+        style={item.style === "circle" ? styles.imageCircle : styles.imageIncubadora}
+        resizeMode={item.style === "circle" ? "cover" : "contain"}
+      />
+      <Text style={styles.cardTitle}>{item.title}</Text>
+      <Text style={styles.cardText}>{item.description}</Text>
+      {item.buttonText && (
+        <TouchableOpacity onPress={item.onPress} style={styles.button}>
+          <Text style={styles.buttonText}>{item.buttonText}</Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Animated.Text
-        style={[
-          styles.title,
-          {
-            opacity: titleAnim,
-            transform: [
-              {
-                translateY: titleAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [50, 0],
-                }),
-              },
-            ],
-          },
-        ]}
-      >
-        Parceiros
-      </Animated.Text>
-
-      <View style={styles.rowContainer}>
-        {/* Card 1 */}
-        <Animated.View
-          style={[
-            styles.card,
-            {
-              opacity: card1Anim,
-              transform: [
-                {
-                  translateY: card1Anim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [50, 0],
-                  }),
-                },
-              ],
-            },
-          ]}
-        >
-          <Image
-            source={{
-              uri: "https://github.com/Kapitour/Imgs-Padr-o/blob/main/home/agm.png?raw=true",
-            }}
-            style={styles.image}
-            resizeMode="contain"
-          />
-          <Text style={styles.cardText}>
-            Parceria com a AGM Associação dos Guias de Turismo de Maricá...
-          </Text>
-          <TouchableOpacity onPress={openWhatsApp} style={styles.button}>
-            <Text style={styles.buttonText}>Guias de Turismo</Text>
-          </TouchableOpacity>
-        </Animated.View>
-
-        {/* Card 2 */}
-        <Animated.View
-          style={[
-            styles.card,
-            {
-              opacity: card2Anim,
-              transform: [
-                {
-                  translateY: card2Anim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [50, 0],
-                  }),
-                },
-              ],
-            },
-          ]}
-        >
-          <Image
-            source={{
-              uri: "https://github.com/Kapitour/Imgs-Padr-o/blob/main/VassourasT%C3%A9c.png?raw=true",
-            }}
-            style={[styles.image, { width: "90%" }]}
-            resizeMode="contain"
-          />
-          <Text style={styles.cardText}>
-            Vassouras Tec, incubadora tecnológica da Univassouras...
-          </Text>
-        </Animated.View>
+    <View style={styles.container}>
+      <Text style={styles.title}>Parceiros</Text>
+      <View style={{ flex: 1 }}>
+        {/* Conteúdo principal da página */}
       </View>
-    </ScrollView>
+
+      <View style={styles.carouselContainer}>
+        <Animated.FlatList
+          ref={flatListRef}
+          data={data}
+          keyExtractor={(item) => item.id}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          pagingEnabled
+          snapToInterval={CARD_WIDTH + SPACING}
+          decelerationRate="fast"
+          contentContainerStyle={{ paddingHorizontal: SPACING / 2 }}
+          renderItem={renderItem}
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+            { useNativeDriver: false }
+          )}
+          onMomentumScrollEnd={(ev) => {
+            const index = Math.round(
+              ev.nativeEvent.contentOffset.x / (CARD_WIDTH + SPACING)
+            );
+            setCurrentIndex(index);
+          }}
+        />
+      </View>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
-    alignItems: "center",
+    flex: 1,
+    backgroundColor: "#f13f3f15",
+    paddingTop: 40,
+    paddingBottom: 30,
   },
   title: {
-    borderBottomColor:"#fff",
-    borderBottomWidth:2,
     color: "#fff",
     fontSize: 28,
     fontWeight: "bold",
-    padding: 3,
     textAlign: "center",
     marginBottom: 20,
+    letterSpacing: 1,
+    borderBottomWidth: 3,
+    borderBottomColor: "#f7a000",
+    alignSelf: "center",
+    paddingBottom: 6,
+    width: "auto",
   },
-  rowContainer: {
-    width: "100%",
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "center",
-    gap: 20,
+  carouselContainer: {
+    height: 320,
   },
   card: {
-    backgroundColor: "#333333b5",
-    borderRadius: 20,
+    backgroundColor: "rgba(59, 57, 57, 0.53)",
+    borderRadius: 24,
     padding: 20,
-    width: "90%",
-    maxWidth: 400,
-    minHeight: 350,
+    width: CARD_WIDTH,
+    marginHorizontal: SPACING / 2,
+    minHeight: 280,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: "#c83349",
+    shadowColor: "#c83349",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 8,
   },
-  image: {
+  imageCircle: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    marginBottom: 12,
+    borderWidth: 3,
+    borderColor: "#f7a000",
+    backgroundColor: "#fff",
+  },
+  imageIncubadora: {
     width: 100,
     height: 100,
-    marginBottom: 15,
+    borderRadius: 12,
+    marginBottom: 12,
+    borderWidth: 3,
+    borderColor: "#f7a000",
+    backgroundColor: "#fff",
+  },
+  cardTitle: {
+    color: "#f7a000",
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 6,
+    textAlign: "center",
+    letterSpacing: 1,
   },
   cardText: {
     color: "#fff",
     fontSize: 14,
-    lineHeight: 21,
+    lineHeight: 20,
     textAlign: "center",
-    marginBottom: 15,
+    marginBottom: 14,
   },
   button: {
-    backgroundColor: "rgba(201, 52, 52, 0.884)",
+    backgroundColor: "#c83349",
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 5,
+    borderRadius: 8,
     elevation: 4,
   },
   buttonText: {
     color: "#fff",
     fontWeight: "bold",
     fontSize: 14,
+    letterSpacing: 1,
   },
 });
 
