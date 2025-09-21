@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+/*import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -78,8 +78,8 @@ const Partiners = () => {
     <View style={styles.container}>
       <Text style={styles.title}>Parceiros</Text>
       <View style={{ flex: 1 }}>
-        {/* Conteúdo principal da página */}
-      </View>
+        {/* Conteúdo principal da página */
+    /*  </View>
 
       <View style={styles.carouselContainer}>
         <Animated.FlatList
@@ -197,4 +197,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Partiners;
+export default Partiners; */
