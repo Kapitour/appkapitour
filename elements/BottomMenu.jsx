@@ -45,10 +45,10 @@ export default function BottomMenu() {
         <Ionicons name="cart-outline" size={28} color="#ffffff" />
       </TouchableOpacity>
       <TouchableOpacity
-        onPress={() => navigation.navigate("Contato")}
-        accessibilityLabel="Ir para Contato"
+        onPress={() => navigation.navigate("Mapa")}
+        accessibilityLabel="Ir para Mapa"
       >
-        <Ionicons name="settings-outline" size={28} color="#ffffff" />
+        <Ionicons name="map-outline" size={28} color="#ffffff" />
       </TouchableOpacity>
     </View>
   );

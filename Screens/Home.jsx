@@ -10,14 +10,14 @@ import {
   FlatList, 
   Dimensions, 
   Linking, 
-  StatusBar, 
-  SafeAreaView 
+  StatusBar
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import ContainerImg from "../components/ContainerImg";
 import MostCaroussel from "../components/MostCaroussel";
-import Map from "../components/Map";
+import { useNavigation } from "@react-navigation/native";
 import DetalhesRota from "./DetalhesRotas";
 import { supabase } from "../lib/supabase";
 
@@ -26,22 +26,15 @@ const CARD_WIDTH = width * 0.6;  // Largura do card reduzida
 const SPACING = 15;  // Aumento do espaçamento entre os cards
 
 export default function Home() {
+  const navigation = useNavigation();
   const [categoriaId, setCategoriaId] = useState(null);
   const [rotaSelecionada, setRotaSelecionada] = useState(null);
-  const [categorias, setCategorias] = useState([]);
-  const [mostrarCategorias, setMostrarCategorias] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const flatListRef = useRef(null);
   const scrollX = useRef(new Animated.Value(0)).current;
 
-  useEffect(() => {
-    const fetchCategorias = async () => {
-      const { data, error } = await supabase.from("categorias").select("*");
-      if (!error) setCategorias(data);
-    };
-    fetchCategorias();
-  }, []);
+  // Categorias e mapa saem da Home; card leva ao Mapa
 
   const patrocinadores = [
     {
@@ -157,51 +150,31 @@ export default function Home() {
             </View>
             <MostCaroussel onRotaPress={setRotaSelecionada} />
 
-            {/* Categorias Section */}
+            {/* Descobrir no mapa */}
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Categorias</Text>
-                <TouchableOpacity 
-                  onPress={() => { 
-                    if (mostrarCategorias) {
-                      setCategoriaId(null);
-                    }
-                    setMostrarCategorias(!mostrarCategorias); 
-                  }}
-                >
-                  <Text style={styles.seeAll}>
-                    {mostrarCategorias ? "Ocultar" : "Expandir"}
-                  </Text>
-                </TouchableOpacity>
+                <Text style={styles.sectionTitle}>Descubra no Mapa</Text>
               </View>
-
-              {/* Categorias */}
-              {mostrarCategorias && (
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoriasContainer}>
-                  {categorias.map((cat) => (
-                    <TouchableOpacity 
-                      key={cat.id} 
-                      style={[ 
-                        styles.filtro, 
-                        categoriaId === cat.id && styles.filtroSelecionado,
-                      ]}
-                      onPress={() => setCategoriaId(cat.id === categoriaId ? null : cat.id)}
-                    >
-                      <Text style={styles.textoCategoria}>{cat.nome}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              )}
-
-              {/* Mapa aparece somente se mostrarCategorias === true e categoriaId definido */}
-              {mostrarCategorias && categoriaId && (
-                <View style={styles.mapaWrapper}>
-                  <Map categoriaId={categoriaId} />
-                  <TouchableOpacity style={styles.closeMapButton} onPress={() => setCategoriaId(null)}>
-                    <Ionicons name="close" size={20} color="#fff" />
-                  </TouchableOpacity>
-                </View>
-              )}
+              <TouchableOpacity 
+                activeOpacity={0.8}
+                style={styles.discoverCard} 
+                onPress={() => navigation.navigate("Mapa")}
+              >
+                <LinearGradient 
+                  colors={["#c83349", "#f7a000"]} 
+                  start={{x: 0, y: 0}}
+                  end={{x: 1, y: 0}}
+                  style={styles.discoverGradient}
+                >
+                  <View style={styles.discoverIconContainer}>
+                    <Ionicons name="map" size={32} color="#fff" />
+                  </View>
+                  <View style={styles.discoverTextContainer}>
+                    <Text style={styles.discoverTitle}>Descubra pontos turísticos próximos</Text>
+                    <Text style={styles.discoverSubtitle}>Abra o mapa e explore por categoria</Text>
+                  </View>
+                </LinearGradient>
+              </TouchableOpacity>
             </View>
 
             {/* Patrocinadores */}
@@ -251,11 +224,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1, // Faz com que o conteúdo ocupe toda a altura disponível.
     paddingTop: 20, // Adiciona espaçamento no topo para não colidir com a barra de status.
+    paddingHorizontal: 15, // Adiciona margens laterais para evitar que o conteúdo encoste nas bordas
   },
 
   // Wrapper (caixa) que envolve a imagem do topo da tela.
   topImageWrapper: {
-    height: 220, // Altura da imagem de topo.
+    height: 50, // Altura da imagem de topo.
     justifyContent: "flex-end", // Posiciona o conteúdo no final da área (parte inferior).
   },
 
@@ -457,6 +431,51 @@ const styles = StyleSheet.create({
     fontWeight: "600", // Peso do texto (semi-negrito).
   },
 
+  // Estilos para o card de descoberta no mapa
+  discoverCard: {
+    marginHorizontal: 20,
+    marginVertical: 10,
+    borderRadius: 16,
+    elevation: 8,
+    shadowColor: "#c83349",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    overflow: 'hidden',
+  },
+  discoverGradient: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+    borderRadius: 16,
+  },
+  discoverIconContainer: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 15,
+  },
+  discoverTextContainer: {
+    flex: 1,
+  },
+  discoverTitle: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 4,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  discoverSubtitle: {
+    color: "#fff",
+    fontSize: 14,
+    opacity: 0.9,
+  },
+  
   // Rodapé da página.
   footer: {
     padding: 15, // Espaçamento interno do rodapé.

@@ -233,6 +233,11 @@ const AreaUsuario = () => {
             </TouchableOpacity>
           )}
 
+          {/* Acesso a Contato dentro da Área do Usuário */}
+          <TouchableOpacity style={styles.cupom} onPress={() => navigation.navigate("Contato")}>
+            <Text style={styles.cupomtext}>Contato e Suporte</Text>
+          </TouchableOpacity>
+
           <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
             <MaterialCommunityIcons name="logout" size={20} color="#fff" />
             <Text style={styles.logoutButtonText}>Sair</Text>

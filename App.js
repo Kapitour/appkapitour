@@ -15,6 +15,7 @@ import Login from "./Screens/Login";
 import Rotas from "./Screens/Rotas";
 import Loja from "./Screens/Loja";
 import Contato from "./Screens/Contato";
+import Mapa from "./Screens/Mapa";
 import Cadastro from "./Screens/Cadastro";
 import AreaUsuario from "./Screens/AreaUsuario";
 import LeitorQR from "./Screens/LeitorQR";
@@ -38,6 +39,7 @@ function MainStack() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="MainTabs" component={MainTabs} />
       <Stack.Screen name="LeitorQR" component={LeitorQR} />
+      <Stack.Screen name="Contato" component={Contato} />
     </Stack.Navigator>
   );
 }
@@ -97,11 +99,11 @@ function MainTabs() {
         }}
       />
       <Tab.Screen
-        name="Contato"
-        component={Contato}
+        name="Mapa"
+        component={Mapa}
         options={{
           tabBarIcon: ({ color }) => (
-            <Ionicons name="call-outline" color={color} size={28} />
+            <Ionicons name="map-outline" color={color} size={28} />
           ),
         }}
       />

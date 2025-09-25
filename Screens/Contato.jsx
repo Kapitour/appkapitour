@@ -1,20 +1,23 @@
 import React, { useState, useRef, useEffect } from "react";
 import {
-  Animated,
   View,
   Text,
-  TextInput,
-  TouchableOpacity,
   StyleSheet,
-  ScrollView,
+  TouchableOpacity,
+  Animated,
   Linking,
+  ScrollView,
+  TextInput,
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
 import { FontAwesome } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { useNavigation } from "@react-navigation/native";
 
 const Contato = () => {
+  const navigation = useNavigation();
   const [showForm, setShowForm] = useState(false);
   const scale = useRef(new Animated.Value(1)).current;
 
@@ -53,6 +56,14 @@ const Contato = () => {
         end={{ x: 0, y: 1 }}
         style={styles.gradient}
       />
+
+      {/* Botão de retorno */}
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+      >
+        <Ionicons name="arrow-back" size={28} color="#fff" />
+      </TouchableOpacity>
 
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"}>
@@ -263,5 +274,17 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     textTransform: "uppercase",
     letterSpacing: 1,
+  },
+  backButton: {
+    position: "absolute",
+    top: 20,
+    left: 20,
+    zIndex: 10,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(0,0,0,0.3)",
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

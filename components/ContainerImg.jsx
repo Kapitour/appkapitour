@@ -8,17 +8,6 @@ class ContainerImg extends Component {
   render() {
     return (
       <View style={styles.container}>
-        {/* Imagem de fundo */}
-        <Image
-          style={styles.img1}
-          source={require("../assets/BackgroundHeader.png")}
-          resizeMode="cover"
-        />
-                {/* Gradiente para transparência na parte inferior */}
-        <LinearGradient
-          colors={["transparent", "#0f142c"]} // do topo transparente para a cor de fundo
-          style={styles.gradient}
-        />
 
         {/* Conteúdo sobreposto */}
         <View style={styles.content}>
@@ -38,19 +27,12 @@ export default ContainerImg;
 const styles = StyleSheet.create({
   container: {
     width: "100%",
-    height: 250, // altura do topo (imagem + conteúdo)
+    height: 180, // reduzido de 250 para 180
     position: "relative",
     alignItems: "center",
     justifyContent: "flex-start",
   },
-  img1: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    width: "100%",
-    height: "100%",
-    zIndex: 0,
-  },
+
   gradient: {
   position: "absolute",
   bottom: 0,
@@ -66,8 +48,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   img2: {
-    width: width * 0.8,
     aspectRatio: 1,
-    marginTop: -20, // sobe a logo
+    marginTop: -10, // sobe a logo
+    height: 300, // tamanho controlado da imagem
+    width: 300,
   },
 });
