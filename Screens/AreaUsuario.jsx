@@ -8,9 +8,10 @@ import {
   ScrollView,
   Modal,
   TextInput,
+  Image,
 } from "react-native";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { MaterialCommunityIcons, Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAuth } from "../hooks/useAuth";
 import QRCode from "react-native-qrcode-svg";
@@ -23,6 +24,8 @@ import {
   buscarContagemCuponsPorCampanha,
   atualizarUsuario,
 } from "../utils/cupomManager";
+import PointDetail from "../components/PointDetail";
+import DetalhesRota from "./DetalhesRotas";
 
 const AreaUsuario = () => {
   const navigation = useNavigation();
@@ -46,6 +49,12 @@ const AreaUsuario = () => {
   const [sexo, setSexo] = useState("");
   const [loading, setLoading] = useState(true);
   const [tipoUsuarioId, setTipoUsuarioId] = useState(null);
+  const [favoritos, setFavoritos] = useState([]);
+  const [rotasFavoritas, setRotasFavoritas] = useState([]);
+  const [loadingFavoritos, setLoadingFavoritos] = useState(false);
+  const [selectedPoint, setSelectedPoint] = useState(null);
+  const [showPointDetail, setShowPointDetail] = useState(false);
+  const [rotaSelecionada, setRotaSelecionada] = useState(null);
 
   // Carregar info do usuário
   useEffect(() => {
@@ -116,9 +125,137 @@ const AreaUsuario = () => {
       }
   };
 
+  // Função para buscar favoritos do usuário (pontos turísticos)
+  const fetchFavoritos = async () => {
+    if (!userInfo) return;
+    setLoadingFavoritos(true);
+    try {
+      // Buscar favoritos do usuário
+      const { data, error } = await supabase
+        .from('favoritos')
+        .select(`
+          id,
+          ponto_id,
+          data_adicionado,
+          pontos_turisticos:ponto_id (
+            id,
+            nome,
+            descricao,
+            url_img,
+            latitude,
+            longitude
+          )
+        `)
+        .eq('usuario_id', userInfo.id);
+
+      if (error) {
+        console.error("Erro ao buscar favoritos:", error);
+        return;
+      }
+
+      setFavoritos(data || []);
+    } catch (err) {
+      console.error("Erro inesperado ao buscar favoritos:", err);
+    } finally {
+      setLoadingFavoritos(false);
+    }
+  };
+
+  // Função para buscar rotas favoritas (guias)
+  const fetchRotasFavoritas = async () => {
+    if (!userInfo) return;
+    
+    try {
+      // Buscar pontos favoritos do usuário
+      const { data: favoritosData, error: favoritosError } = await supabase
+        .from('favoritos')
+        .select('ponto_id')
+        .eq('usuario_id', userInfo.id);
+
+      if (favoritosError) {
+        console.error("Erro ao buscar favoritos:", favoritosError);
+        return;
+      }
+
+      const pontosFavoritos = favoritosData?.map(f => f.ponto_id) || [];
+      
+      if (pontosFavoritos.length === 0) {
+        setRotasFavoritas([]);
+        return;
+      }
+
+      // Buscar rotas que contêm pontos favoritos
+      const { data: rotaPontoData, error: rotaPontoError } = await supabase
+        .from('rota_ponto')
+        .select('rota_id, ponto_id, ordem')
+        .in('ponto_id', pontosFavoritos);
+
+      if (rotaPontoError) {
+        console.error("Erro ao buscar rota_ponto:", rotaPontoError);
+        return;
+      }
+
+      // Agrupar por rota_id
+      const rotasIds = [...new Set(rotaPontoData?.map(rp => rp.rota_id) || [])];
+      
+      if (rotasIds.length === 0) {
+        setRotasFavoritas([]);
+        return;
+      }
+
+      // Buscar informações das rotas
+      const { data: rotasData, error: rotasError } = await supabase
+        .from('rotas')
+        .select('id, nome, descricao')
+        .in('id', rotasIds);
+
+      if (rotasError) {
+        console.error("Erro ao buscar rotas:", rotasError);
+        return;
+      }
+
+      // Para cada rota, buscar imagem do primeiro ponto
+      const rotasCompletas = await Promise.all(
+        rotasData.map(async (rota) => {
+          // Buscar pontos da rota ordenados
+          const { data: pontosRota, error: pontosError } = await supabase
+            .from('rota_ponto')
+            .select('ponto_id, ordem')
+            .eq('rota_id', rota.id)
+            .order('ordem', { ascending: true });
+
+          if (pontosError || !pontosRota || pontosRota.length === 0) {
+            return { ...rota, imagem: null, pontoId: null };
+          }
+
+          const primeiroPontoId = pontosRota[0].ponto_id;
+
+          // Buscar imagem do primeiro ponto
+          const { data: primeiroPonto, error: pontoError } = await supabase
+            .from('pontos_turisticos')
+            .select('url_img')
+            .eq('id', primeiroPontoId)
+            .single();
+
+          return {
+            ...rota,
+            imagem: primeiroPonto?.url_img || null,
+            pontoId: primeiroPontoId
+          };
+        })
+      );
+
+      setRotasFavoritas(rotasCompletas);
+    } catch (err) {
+      console.error("Erro inesperado ao buscar rotas favoritas:", err);
+    }
+  };
+
   // Ao mudar userInfo, carregar listas
   useEffect(() => {
     fetchCuponsOuHistorico();
+    fetchFavoritos();
+    fetchRotasFavoritas();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userInfo]);
 
@@ -126,6 +263,8 @@ const AreaUsuario = () => {
   useFocusEffect(
     React.useCallback(() => {
       fetchCuponsOuHistorico();
+      fetchFavoritos();
+      fetchRotasFavoritas();
     }, [userInfo])
   );
 
@@ -152,6 +291,33 @@ const AreaUsuario = () => {
     ]);
   };
 
+  // Função para abrir modal de detalhes do ponto turístico
+  const handlePointPress = (favorito) => {
+    const point = {
+      id: favorito.pontos_turisticos.id,
+      nome: favorito.pontos_turisticos.nome,
+      descricao: favorito.pontos_turisticos.descricao,
+      url_img: favorito.pontos_turisticos.url_img,
+      latitude: favorito.pontos_turisticos.latitude,
+      longitude: favorito.pontos_turisticos.longitude
+    };
+    setSelectedPoint(point);
+    setShowPointDetail(true);
+  };
+
+  // Função para fechar modal de detalhes
+  const handleClosePointDetail = () => {
+    setShowPointDetail(false);
+    setSelectedPoint(null);
+  };
+
+  // Função para lidar com favoritos no modal
+  const handleFavoriteToggle = async () => {
+    // Atualizar lista de favoritos após mudança
+    fetchFavoritos();
+    fetchRotasFavoritas();
+  };
+
   if (loading) {
     return (
       <LinearGradient colors={["#c83349", "#0f142c"]} style={styles.containerBack}>
@@ -172,6 +338,16 @@ const AreaUsuario = () => {
           </TouchableOpacity>
         </View>
       </LinearGradient>
+    );
+  }
+
+  // Se uma rota foi selecionada, mostrar DetalhesRota
+  if (rotaSelecionada) {
+    return (
+      <DetalhesRota
+        rota={rotaSelecionada}
+        voltar={() => setRotaSelecionada(null)}
+      />
     );
   }
 
@@ -242,13 +418,107 @@ const AreaUsuario = () => {
             <MaterialCommunityIcons name="logout" size={20} color="#fff" />
             <Text style={styles.logoutButtonText}>Sair</Text>
           </TouchableOpacity>
-        </View>
-      </ScrollView>
+</View>
+
+          {/* Seção de Rotas Favoritas */}
+          <View style={styles.sectionContainer}>
+            <Text style={styles.sectionTitle}>Guias Favoritos</Text>
+            
+            {loadingFavoritos ? (
+              <Text style={styles.loadingText}>Carregando rotas favoritas...</Text>
+            ) : rotasFavoritas.length === 0 ? (
+              <Text style={styles.emptyText}>Você ainda não tem rotas favoritas.</Text>
+            ) : (
+              <View style={styles.favoritosContainer}>
+                {rotasFavoritas.map((rota) => (
+                  <TouchableOpacity 
+                    key={rota.id} 
+                    style={styles.favoritoCard}
+                    onPress={() => setRotaSelecionada(rota)}
+                  >
+                    <Image 
+                      source={{ uri: rota.imagem || 'https://via.placeholder.com/150' }} 
+                      style={styles.favoritoImagem} 
+                    />
+                    <LinearGradient
+                      colors={['transparent', 'rgba(0,0,0,0.8)']}
+                      style={styles.favoritoGradient}
+                    >
+                      <Text style={styles.favoritoNome}>{rota.nome}</Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          </View>
+
+          {/* Seção de Pontos Turísticos Favoritos */}
+          <View style={styles.sectionContainer}>
+            <Text style={styles.sectionTitle}>Pontos Turísticos Favoritos</Text>
+            
+            {loadingFavoritos ? (
+              <Text style={styles.loadingText}>Carregando favoritos...</Text>
+            ) : favoritos.length === 0 ? (
+              <Text style={styles.emptyText}>Você ainda não tem pontos turísticos favoritos.</Text>
+            ) : (
+              <View style={styles.favoritosContainer}>
+                {favoritos.map((favorito) => (
+                  <TouchableOpacity 
+                    key={favorito.id} 
+                    style={styles.favoritoCard}
+                    onPress={() => handlePointPress(favorito)}
+                  >
+                    <Image 
+                      source={{ uri: favorito.pontos_turisticos.url_img || 'https://via.placeholder.com/150' }} 
+                      style={styles.favoritoImagem} 
+                    />
+                    <LinearGradient
+                      colors={['transparent', 'rgba(0,0,0,0.8)']}
+                      style={styles.favoritoGradient}
+                    >
+                      <Text style={styles.favoritoNome}>{favorito.pontos_turisticos.nome}</Text>
+                    </LinearGradient>
+                    <TouchableOpacity 
+                      style={styles.removerFavoritoBtn}
+                      onPress={async () => {
+                        try {
+                          const { error } = await supabase
+                            .from('favoritos')
+                            .delete()
+                            .eq('id', favorito.id);
+                            
+                          if (error) throw error;
+                          fetchFavoritos(); // Atualizar lista após remover
+                        } catch (err) {
+                          console.error("Erro ao remover favorito:", err);
+                          Alert.alert("Erro", "Não foi possível remover o favorito.");
+                        }
+                      }}
+                    >
+                      <Ionicons name="heart-dislike" size={20} color="#fff" />
+                    </TouchableOpacity>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          </View>
+        </ScrollView>
+        <View style={{ height: 80 }} />
 
       {renderCuponsModal()}
       {renderCampanhasModal()}
       {renderQRCodeModal()}
       {renderEditModal()}
+      
+      {/* Modal de detalhes do ponto turístico */}
+      {showPointDetail && selectedPoint && (
+        <PointDetail
+          point={selectedPoint}
+          visible={showPointDetail}
+          onClose={handleClosePointDetail}
+          onFavoriteToggle={handleFavoriteToggle}
+        />
+      )}
     </LinearGradient>
   );
 
@@ -457,6 +727,15 @@ const styles = StyleSheet.create({
   loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
   errorContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
   errorText: { color: "#fff", fontWeight: "bold", marginBottom: 10 },
+  sectionContainer: { marginTop: 20, marginBottom: 20 },
+  sectionTitle: { fontSize: 20, fontWeight: "bold", color: "#fff", marginBottom: 15 },
+  emptyText: { color: "#fff", textAlign: "center", marginTop: 10, fontSize: 16 },
+  favoritosContainer: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" },
+  favoritoCard: { width: "48%", height: 180, borderRadius: 10, marginBottom: 15, overflow: "hidden", position: "relative" },
+  favoritoImagem: { width: "100%", height: "100%", resizeMode: "cover" },
+  favoritoGradient: { position: "absolute", bottom: 0, left: 0, right: 0, height: "50%", justifyContent: "flex-end", padding: 10 },
+  favoritoNome: { color: "#fff", fontSize: 16, fontWeight: "bold" },
+  removerFavoritoBtn: { position: "absolute", top: 10, right: 10, backgroundColor: "rgba(200, 51, 73, 0.8)", borderRadius: 20, width: 36, height: 36, justifyContent: "center", alignItems: "center" },
 });
 
 export default AreaUsuario;

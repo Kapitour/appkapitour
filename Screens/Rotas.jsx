@@ -7,100 +7,201 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Image,
+  Alert,
 } from "react-native";
 import { supabase } from "../lib/supabase";
 import DetalhesRota from "./DetalhesRotas";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from "../hooks/useAuth";
 
 export default function Rotas() {
   const [rotas, setRotas] = useState([]);
   const [rotaSelecionada, setRotaSelecionada] = useState(null);
   const [loading, setLoading] = useState(true);
   const [favoritos, setFavoritos] = useState([]);
+  const { user } = useAuth();
+  const [userInfo, setUserInfo] = useState(null);
+
+  const fetchRotas = async () => {
+    setLoading(true);
+    
+    // Buscar todas as rotas
+    const { data: rotasData, error } = await supabase.from("rotas").select("*");
+    
+    if (error) {
+      console.error("Erro ao buscar rotas:", error);
+      setLoading(false);
+      return;
+    }
+    
+    // Para cada rota, buscar imagem e categorias
+    const rotasCompletas = await Promise.all(
+      rotasData.map(async (rota) => {
+        // Buscar pontos da rota
+        const { data: rotaPontos, error: pontosError } = await supabase
+          .from("rota_ponto")
+          .select("ponto_id, ordem")
+          .eq("rota_id", rota.id)
+          .order("ordem", { ascending: true });
+          
+        if (pontosError || !rotaPontos || rotaPontos.length === 0) {
+          return { ...rota, imagem: null, categorias: [], pontoId: null };
+        }
+        
+        const pontoIds = rotaPontos.map(p => p.ponto_id).filter(id => id);
+        const primeiroPontoId = pontoIds[0];
+        
+        // Buscar imagem do primeiro ponto
+        const { data: primeiroPonto, error: pontoError } = await supabase
+          .from("pontos_turisticos")
+          .select("url_img")
+          .eq("id", primeiroPontoId)
+          .single();
+          
+        // Buscar categorias dos pontos
+        const { data: pontoCategorias, error: categoriasError } = await supabase
+          .from("ponto_categoria")
+          .select("categoria_id")
+          .in("ponto_id", pontoIds);
+          
+        let categoriasNomes = [];
+        if (!categoriasError && pontoCategorias && pontoCategorias.length > 0) {
+          // Extrair IDs de categorias únicas
+          const categoriaIds = [...new Set(pontoCategorias.map(pc => pc.categoria_id))];
+          
+          // Buscar nomes das categorias
+          const { data: categorias } = await supabase
+            .from("categorias")
+            .select("nome")
+            .in("id", categoriaIds);
+            
+          if (categorias) {
+            categoriasNomes = categorias.map(c => c.nome);
+          }
+        }
+        
+        return {
+          ...rota,
+          imagem: primeiroPonto?.url_img || null,
+          categorias: categoriasNomes,
+          pontoId: primeiroPontoId, // Adicionar o ID do primeiro ponto
+        };
+      })
+    );
+    
+    setRotas(rotasCompletas);
+    setLoading(false);
+  };
 
   useEffect(() => {
-    const fetchRotas = async () => {
-      setLoading(true);
-      
-      // Buscar todas as rotas
-      const { data: rotasData, error } = await supabase.from("rotas").select("*");
-      
-      if (error) {
-        console.error("Erro ao buscar rotas:", error);
-        setLoading(false);
+    fetchRotas();
+    
+    // Buscar informações do usuário e favoritos
+    if (user?.id) {
+      fetchUserInfo();
+      fetchFavoritos();
+    }
+  }, [user]);
+
+  // Buscar informações do usuário
+  const fetchUserInfo = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("usuarios")
+        .select("*")
+        .eq("auth_id", user.id)
+        .single();
+
+      if (error || !data) {
+        console.error("Erro ao buscar informações do usuário:", error);
+        return;
+      }
+
+      setUserInfo(data);
+    } catch (err) {
+      console.error("Erro inesperado:", err);
+    }
+  };
+
+  // Buscar favoritos do usuário
+  const fetchFavoritos = async () => {
+    if (!user?.id) return;
+    
+    try {
+      // Primeiro buscar o ID do usuário na tabela usuarios
+      const { data: userData, error: userError } = await supabase
+        .from("usuarios")
+        .select("id")
+        .eq("auth_id", user.id)
+        .single();
+        
+      if (userError || !userData) {
+        console.error("Erro ao buscar ID do usuário:", userError);
         return;
       }
       
-      // Para cada rota, buscar imagem e categorias
-      const rotasCompletas = await Promise.all(
-        rotasData.map(async (rota) => {
-          // Buscar pontos da rota
-          const { data: rotaPontos, error: pontosError } = await supabase
-            .from("rota_ponto")
-            .select("ponto_id, ordem")
-            .eq("rota_id", rota.id)
-            .order("ordem", { ascending: true });
-            
-          if (pontosError || !rotaPontos || rotaPontos.length === 0) {
-            return { ...rota, imagem: null, categorias: [] };
-          }
-          
-          const pontoIds = rotaPontos.map(p => p.ponto_id).filter(id => id);
-          
-          // Buscar imagem do primeiro ponto
-          const { data: primeiroPonto, error: pontoError } = await supabase
-            .from("pontos_turisticos")
-            .select("url_img")
-            .eq("id", pontoIds[0])
-            .single();
-            
-          // Buscar categorias dos pontos
-          const { data: pontoCategorias, error: categoriasError } = await supabase
-            .from("ponto_categoria")
-            .select("categoria_id")
-            .in("ponto_id", pontoIds);
-            
-          let categoriasNomes = [];
-          if (!categoriasError && pontoCategorias && pontoCategorias.length > 0) {
-            // Extrair IDs de categorias únicas
-            const categoriaIds = [...new Set(pontoCategorias.map(pc => pc.categoria_id))];
-            
-            // Buscar nomes das categorias
-            const { data: categorias } = await supabase
-              .from("categorias")
-              .select("nome")
-              .in("id", categoriaIds);
-              
-            if (categorias) {
-              categoriasNomes = categorias.map(c => c.nome);
-            }
-          }
-          
-          return {
-            ...rota,
-            imagem: primeiroPonto?.url_img || null,
-            categorias: categoriasNomes,
-          };
-        })
-      );
-      
-      setRotas(rotasCompletas);
-      setLoading(false);
-    };
-    
-    fetchRotas();
-  }, []);
+      // Buscar favoritos do usuário
+      const { data, error } = await supabase
+        .from('favoritos')
+        .select('ponto_id')
+        .eq('usuario_id', userData.id);
 
-  const toggleFavorito = (rotaId, event) => {
-    event.stopPropagation();
-    setFavoritos(prev => {
-      if (prev.includes(rotaId)) {
-        return prev.filter(id => id !== rotaId);
-      } else {
-        return [...prev, rotaId];
+      if (error) {
+        console.error("Erro ao buscar favoritos:", error);
+        return;
       }
-    });
+
+      setFavoritos(data?.map(f => f.ponto_id) || []);
+    } catch (err) {
+      console.error("Erro inesperado ao buscar favoritos:", err);
+    }
+  };
+
+  // Verificar se um ponto é favorito
+  const isFavorito = (pontoId) => {
+    return favoritos.includes(pontoId);
+  };
+
+  // Alternar favorito
+  const toggleFavorito = async (pontoId, event) => {
+    if (event) event.stopPropagation();
+    
+    if (!user?.id || !userInfo) {
+      Alert.alert("Atenção", "Você precisa estar logado para favoritar pontos turísticos.");
+      return;
+    }
+
+    try {
+      if (isFavorito(pontoId)) {
+        // Remover dos favoritos
+        const { error } = await supabase
+          .from('favoritos')
+          .delete()
+          .eq('usuario_id', userInfo.id)
+          .eq('ponto_id', pontoId);
+          
+        if (error) throw error;
+        
+        setFavoritos(favoritos.filter(id => id !== pontoId));
+      } else {
+        // Adicionar aos favoritos
+        const { error } = await supabase
+          .from('favoritos')
+          .insert({
+            usuario_id: userInfo.id,
+            ponto_id: pontoId,
+            data_adicionado: new Date().toISOString()
+          });
+          
+        if (error) throw error;
+        
+        setFavoritos([...favoritos, pontoId]);
+      }
+    } catch (err) {
+      console.error("Erro ao atualizar favorito:", err);
+      Alert.alert("Erro", "Não foi possível atualizar o favorito.");
+    }
   };
 
   if (loading) return (
@@ -156,9 +257,9 @@ export default function Rotas() {
                   onPress={(e) => toggleFavorito(rota.id, e)}
                 >
                   <Ionicons 
-                    name={favoritos.includes(rota.id) ? "heart" : "heart-outline"} 
+                    name={isFavorito(rota.id) ? "heart" : "heart-outline"} 
                     size={24} 
-                    color={favoritos.includes(rota.id) ? "#c3073f" : "white"} 
+                    color={isFavorito(rota.id) ? "#c3073f" : "white"} 
                   />
                 </TouchableOpacity>
                 
@@ -202,6 +303,7 @@ const styles = StyleSheet.create({
   contentContainer: {
     padding: 20,
     alignItems: "center",
+    paddingBottom: 100, // Adiciona espaçamento inferior para o BottomMenu
   },
   title: {
     fontSize: 22,

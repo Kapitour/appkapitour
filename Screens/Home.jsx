@@ -141,12 +141,9 @@ export default function Home() {
               </Text>
             </LinearGradient>
 
-            {/* Rotas mais realizadas */}
+            {/* Top 10 Guias mais bem avaliados */}
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Rotas mais realizadas</Text>
-              <TouchableOpacity>
-                <Text style={styles.seeAll}>Ver todas</Text>
-              </TouchableOpacity>
+              <Text style={styles.sectionTitle}>Top 10 Guias mais bem avaliados</Text>
             </View>
             <MostCaroussel onRotaPress={setRotaSelecionada} />
 
@@ -225,6 +222,7 @@ const styles = StyleSheet.create({
     flex: 1, // Faz com que o conteúdo ocupe toda a altura disponível.
     paddingTop: 20, // Adiciona espaçamento no topo para não colidir com a barra de status.
     paddingHorizontal: 15, // Adiciona margens laterais para evitar que o conteúdo encoste nas bordas
+    paddingBottom: 100, // Adiciona espaçamento inferior para o BottomMenu
   },
 
   // Wrapper (caixa) que envolve a imagem do topo da tela.

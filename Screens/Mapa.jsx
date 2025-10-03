@@ -310,6 +310,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 14,
     maxHeight: 250, // Limita a altura máxima do card
+    marginBottom: 80, // Adiciona espaçamento para o BottomMenu
   },
   img: { width: "100%", height: 120, borderRadius: 10, marginBottom: 8 }, // Reduzindo altura da imagem
   title: { color: "#fff", fontWeight: "bold", fontSize: 16 },

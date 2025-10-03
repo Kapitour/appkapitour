@@ -1,11 +1,209 @@
-import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Linking, ScrollView, SafeAreaView, Dimensions } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Linking, ScrollView, Dimensions, Modal, TextInput, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../hooks/useAuth';
 
 const { height } = Dimensions.get('window');
 
-const PointDetail = ({ point, onClose, distance, onFavorite, isFavorite }) => {
+const PointDetail = ({ point, onClose, distance, onFavorite, isFavorite: propIsFavorite }) => {
+  const { user } = useAuth();
+  const [userInfo, setUserInfo] = useState(null);
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState('');
+  const [pointRating, setPointRating] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(propIsFavorite);
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchUserInfo();
+      fetchPointRating();
+      checkFavoriteStatus();
+    }
+  }, [user, point]);
+  
+  useEffect(() => {
+    setIsFavorite(propIsFavorite);
+  }, [propIsFavorite]);
+
+  // Buscar informações do usuário
+  const fetchUserInfo = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("usuarios")
+        .select("*")
+        .eq("auth_id", user.id)
+        .single();
+
+      if (error || !data) {
+        console.error("Erro ao buscar informações do usuário:", error);
+        return;
+      }
+
+      setUserInfo(data);
+    } catch (err) {
+      console.error("Erro inesperado:", err);
+    }
+  };
+
+  // Verificar status de favorito
+  const checkFavoriteStatus = async () => {
+    if (!user?.id || !userInfo) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from("favoritos")
+        .select("*")
+        .eq("usuario_id", userInfo.id)
+        .eq("ponto_id", point.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error("Erro ao verificar favorito:", error);
+        return;
+      }
+
+      setIsFavorite(!!data);
+    } catch (err) {
+      console.error("Erro inesperado:", err);
+    }
+  };
+
+  // Alternar favorito
+  const toggleFavorito = async () => {
+    if (!user?.id) {
+      Alert.alert("Atenção", "Você precisa estar logado para favoritar pontos turísticos.");
+      return;
+    }
+
+    if (!userInfo) {
+      Alert.alert("Erro", "Não foi possível obter suas informações. Tente novamente.");
+      return;
+    }
+
+    try {
+      if (isFavorite) {
+        // Remover dos favoritos
+        const { error } = await supabase
+          .from("favoritos")
+          .delete()
+          .eq("usuario_id", userInfo.id)
+          .eq("ponto_id", point.id);
+
+        if (error) throw error;
+        setIsFavorite(false);
+      } else {
+        // Adicionar aos favoritos
+        const { error } = await supabase
+          .from("favoritos")
+          .insert({
+            usuario_id: userInfo.id,
+            ponto_id: point.id,
+            data_adicionado: new Date().toISOString()
+          });
+
+        if (error) throw error;
+        setIsFavorite(true);
+      }
+
+      // Notificar o componente pai sobre a mudança
+      if (onFavorite) {
+        onFavorite(point.id, !isFavorite);
+      }
+    } catch (err) {
+      console.error("Erro ao atualizar favorito:", err);
+      Alert.alert("Erro", "Não foi possível atualizar seus favoritos.");
+    }
+  };
+
+  // Buscar avaliação média do ponto
+  const fetchPointRating = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("avaliacoes")
+        .select("nota")
+        .eq("ponto_id", point.id);
+
+      if (error) {
+        console.error("Erro ao buscar avaliações:", error);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        const average = data.reduce((sum, item) => sum + item.nota, 0) / data.length;
+        setPointRating(Math.round(average));
+      }
+    } catch (err) {
+      console.error("Erro inesperado:", err);
+    }
+  };
+
+  // Salvar avaliação
+  const saveRating = async () => {
+    if (!user?.id || !userInfo) {
+      Alert.alert("Atenção", "Você precisa estar logado para avaliar pontos turísticos.");
+      setShowRatingModal(false);
+      return;
+    }
+
+    if (rating === 0) {
+      Alert.alert("Erro", "Por favor, selecione uma avaliação de 1 a 5 estrelas.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // Verificar se o usuário já avaliou este ponto
+      const { data: existingRating } = await supabase
+        .from("avaliacoes")
+        .select("*")
+        .eq("usuario_id", userInfo.id)
+        .eq("ponto_id", point.id)
+        .single();
+
+      let result;
+      
+      if (existingRating) {
+        // Atualizar avaliação existente
+        result = await supabase
+          .from("avaliacoes")
+          .update({
+            nota: rating,
+            comentario: comment,
+            data_avaliacao: new Date().toISOString()
+          })
+          .eq("id", existingRating.id);
+      } else {
+        // Inserir nova avaliação
+        result = await supabase
+          .from("avaliacoes")
+          .insert([{
+            usuario_id: userInfo.id,
+            ponto_id: point.id,
+            nota: rating,
+            comentario: comment,
+            data_avaliacao: new Date().toISOString()
+          }]);
+      }
+
+      if (result.error) throw result.error;
+      
+      Alert.alert("Sucesso", "Sua avaliação foi salva com sucesso!");
+      setShowRatingModal(false);
+      fetchPointRating(); // Atualizar a avaliação média
+    } catch (err) {
+      console.error("Erro ao salvar avaliação:", err);
+      Alert.alert("Erro", "Não foi possível salvar sua avaliação.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Função para abrir o Google Maps com as coordenadas do ponto
   const openInMaps = () => {
     const url = `https://www.google.com/maps/dir/?api=1&destination=${point.latitude},${point.longitude}`;
@@ -13,7 +211,8 @@ const PointDetail = ({ point, onClose, distance, onFavorite, isFavorite }) => {
   };
 
   // Calcula o tempo estimado (5 min por km, aproximadamente)
-  const estimatedTime = Math.round(distance * 5);
+  const safeDistance = distance || 0;
+  const estimatedTime = Math.round(safeDistance * 5);
   const hours = Math.floor(estimatedTime / 60);
   const minutes = estimatedTime % 60;
   const timeText = hours > 0 
@@ -35,7 +234,7 @@ const PointDetail = ({ point, onClose, distance, onFavorite, isFavorite }) => {
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
         
-        <TouchableOpacity style={styles.favoriteButton} onPress={onFavorite}>
+        <TouchableOpacity style={styles.favoriteButton} onPress={toggleFavorito}>
           <Ionicons 
             name={isFavorite ? "star" : "star-outline"} 
             size={24} 
@@ -59,7 +258,7 @@ const PointDetail = ({ point, onClose, distance, onFavorite, isFavorite }) => {
                 {[1, 2, 3, 4, 5].map((star) => (
                   <Ionicons 
                     key={star}
-                    name={star <= point.rating ? "star" : "star-outline"} 
+                    name={star <= (pointRating || point.rating || 0) ? "star" : "star-outline"} 
                     size={16} 
                     color="#f7a000" 
                     style={styles.starIcon}
@@ -71,7 +270,7 @@ const PointDetail = ({ point, onClose, distance, onFavorite, isFavorite }) => {
             {/* Distância e tempo */}
             <View style={styles.statsContainer}>
               <View style={styles.statItem}>
-                <Text style={styles.statValue}>{(distance).toFixed(1)} km</Text>
+                <Text style={styles.statValue}>{safeDistance.toFixed(1)} km</Text>
                 <Text style={styles.statLabel}>Distância</Text>
               </View>
               
@@ -95,7 +294,16 @@ const PointDetail = ({ point, onClose, distance, onFavorite, isFavorite }) => {
         
         {/* Botões de ação fixos */}
         <View style={styles.fixedActionButtons}>
-          <TouchableOpacity style={styles.rateButton}>
+          <TouchableOpacity 
+            style={styles.rateButton}
+            onPress={() => {
+              if (!user) {
+                Alert.alert("Atenção", "Você precisa estar logado para avaliar pontos turísticos.");
+                return;
+              }
+              setShowRatingModal(true);
+            }}
+          >
             <Text style={styles.buttonText}>Avaliar</Text>
           </TouchableOpacity>
           
@@ -104,6 +312,68 @@ const PointDetail = ({ point, onClose, distance, onFavorite, isFavorite }) => {
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* Modal de Avaliação */}
+      <Modal
+        visible={showRatingModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowRatingModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Avaliar {point.nome}</Text>
+            
+            <View style={styles.ratingStarsContainer}>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <TouchableOpacity 
+                  key={star}
+                  onPress={() => setRating(star)}
+                >
+                  <Ionicons 
+                    name={star <= rating ? "star" : "star-outline"} 
+                    size={32} 
+                    color="#f7a000" 
+                    style={styles.ratingStarIcon}
+                  />
+                </TouchableOpacity>
+              ))}
+            </View>
+            
+            <TextInput
+              style={styles.commentInput}
+              placeholder="Deixe um comentário (opcional)"
+              multiline={true}
+              numberOfLines={4}
+              value={comment}
+              onChangeText={setComment}
+            />
+            
+            <View style={styles.modalButtons}>
+              <TouchableOpacity 
+                style={styles.cancelButton}
+                onPress={() => {
+                  setShowRatingModal(false);
+                  setRating(0);
+                  setComment('');
+                }}
+              >
+                <Text style={styles.cancelButtonText}>Cancelar</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.submitButton, loading && styles.disabledButton]}
+                onPress={saveRating}
+                disabled={loading}
+              >
+                <Text style={styles.submitButtonText}>
+                  {loading ? 'Salvando...' : 'Enviar Avaliação'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -252,6 +522,77 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#fff',
+  },
+  // Estilos para o modal de avaliação
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#000',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  ratingStarsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
+  ratingStarIcon: {
+    marginHorizontal: 8,
+  },
+  commentInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    height: 100,
+    textAlignVertical: 'top',
+    marginBottom: 24,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  cancelButton: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+  },
+  cancelButtonText: {
+    color: '#666',
+    fontWeight: 'bold',
+  },
+  submitButton: {
+    flex: 1,
+    backgroundColor: '#f7a000',
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginLeft: 8,
+    borderRadius: 8,
+  },
+  disabledButton: {
+    backgroundColor: '#ccc',
+  },
+  submitButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
   },
 });
 

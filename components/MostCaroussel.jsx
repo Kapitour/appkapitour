@@ -7,10 +7,12 @@ import {
   Image,
   Dimensions,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { supabase } from "../lib/supabase";
 import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from "../hooks/useAuth";
 
 const getMostUsedRoutes = async () => {
   const { data: rotas, error } = await supabase
@@ -72,6 +74,7 @@ const getMostUsedRoutes = async () => {
         nome: rota.nome,
         imagem: ponto.url_img,
         categorias: categoriasNomes,
+        pontoId: pontoIds[0], // Adicionando o ID do primeiro ponto para favoritos
       };
     })
   );
@@ -83,6 +86,8 @@ const getMostUsedRoutes = async () => {
 const MostCaroussel = ({ onRotaPress }) => {
   const [rotas, setRotas] = useState([]);
   const [favoritos, setFavoritos] = useState([]);
+  const { user } = useAuth();
+  const [userInfo, setUserInfo] = useState(null);
 
   useEffect(() => {
     const fetchRotas = async () => {
@@ -91,7 +96,111 @@ const MostCaroussel = ({ onRotaPress }) => {
     };
 
     fetchRotas();
-  }, []);
+    
+    // Buscar informações do usuário
+    if (user?.id) {
+      fetchUserInfo();
+      fetchFavoritos();
+    }
+  }, [user]);
+
+  // Buscar informações do usuário
+  const fetchUserInfo = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("usuarios")
+        .select("*")
+        .eq("auth_id", user.id)
+        .single();
+
+      if (error || !data) {
+        console.error("Erro ao buscar informações do usuário:", error);
+        return;
+      }
+
+      setUserInfo(data);
+    } catch (err) {
+      console.error("Erro inesperado:", err);
+    }
+  };
+
+  // Buscar favoritos do usuário
+  const fetchFavoritos = async () => {
+    if (!user?.id) return;
+    
+    try {
+      // Primeiro buscar o ID do usuário na tabela usuarios
+      const { data: userData, error: userError } = await supabase
+        .from("usuarios")
+        .select("id")
+        .eq("auth_id", user.id)
+        .single();
+        
+      if (userError || !userData) {
+        console.error("Erro ao buscar ID do usuário:", userError);
+        return;
+      }
+      
+      // Buscar favoritos do usuário
+      const { data, error } = await supabase
+        .from('favoritos')
+        .select('ponto_id')
+        .eq('usuario_id', userData.id);
+
+      if (error) {
+        console.error("Erro ao buscar favoritos:", error);
+        return;
+      }
+
+      setFavoritos(data?.map(f => f.ponto_id) || []);
+    } catch (err) {
+      console.error("Erro inesperado ao buscar favoritos:", err);
+    }
+  };
+
+  // Verificar se um ponto é favorito
+  const isFavorito = (pontoId) => {
+    return favoritos.includes(pontoId);
+  };
+
+  // Alternar favorito
+  const toggleFavorito = async (pontoId) => {
+    if (!user?.id || !userInfo) {
+      Alert.alert("Atenção", "Você precisa estar logado para favoritar pontos turísticos.");
+      return;
+    }
+
+    try {
+      if (isFavorito(pontoId)) {
+        // Remover dos favoritos
+        const { error } = await supabase
+          .from('favoritos')
+          .delete()
+          .eq('usuario_id', userInfo.id)
+          .eq('ponto_id', pontoId);
+          
+        if (error) throw error;
+        
+        setFavoritos(favoritos.filter(id => id !== pontoId));
+      } else {
+        // Adicionar aos favoritos
+        const { error } = await supabase
+          .from('favoritos')
+          .insert({
+            usuario_id: userInfo.id,
+            ponto_id: pontoId,
+            data_adicionado: new Date().toISOString()
+          });
+          
+        if (error) throw error;
+        
+        setFavoritos([...favoritos, pontoId]);
+      }
+    } catch (err) {
+      console.error("Erro ao atualizar favorito:", err);
+      Alert.alert("Erro", "Não foi possível atualizar o favorito.");
+    }
+  };
 
   const handleRotaPress = (rota) => {
     if (onRotaPress) {
@@ -99,20 +208,17 @@ const MostCaroussel = ({ onRotaPress }) => {
     }
   };
 
-  const toggleFavorito = (rotaId, event) => {
-    event.stopPropagation();
-    setFavoritos(prev => {
-      if (prev.includes(rotaId)) {
-        return prev.filter(id => id !== rotaId);
-      } else {
-        return [...prev, rotaId];
-      }
-    });
+  // Função para lidar com o clique no botão de favorito
+  const handleFavoritoClick = (rotaId, event) => {
+    if (event) {
+      event.stopPropagation();
+    }
+    toggleFavorito(rotaId);
   };
 
   return (
     <View>
-      <Text style={styles.texto}>Rotas mais realizadas:</Text>
+      <Text style={styles.texto}>Top 10 Guias mais bem avaliados:</Text>
       <ScrollView horizontal={true} showsHorizontalScrollIndicator={false}>
         {rotas.map((rota, index) => (
           <TouchableOpacity
@@ -126,12 +232,12 @@ const MostCaroussel = ({ onRotaPress }) => {
               
               <TouchableOpacity 
                 style={styles.favoriteButton}
-                onPress={(e) => toggleFavorito(rota.id, e)}
+                onPress={(e) => handleFavoritoClick(rota.pontoId, e)}
               >
                 <Ionicons 
-                  name={favoritos.includes(rota.id) ? "heart" : "heart-outline"} 
+                  name={isFavorito(rota.pontoId) ? "heart" : "heart-outline"} 
                   size={24} 
-                  color={favoritos.includes(rota.id) ? "#c3073f" : "white"} 
+                  color={isFavorito(rota.pontoId) ? "#c3073f" : "white"} 
                 />
               </TouchableOpacity>
               
