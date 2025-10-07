@@ -223,6 +223,7 @@ const styles = StyleSheet.create({
     paddingTop: 20, // Adiciona espaçamento no topo para não colidir com a barra de status.
     paddingHorizontal: 15, // Adiciona margens laterais para evitar que o conteúdo encoste nas bordas
     paddingBottom: 100, // Adiciona espaçamento inferior para o BottomMenu
+    marginBottom: 50
   },
 
   // Wrapper (caixa) que envolve a imagem do topo da tela.
