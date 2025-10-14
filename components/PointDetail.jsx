@@ -1,19 +1,37 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Linking, ScrollView, Dimensions, Modal, TextInput, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { supabase } from '../lib/supabase';
-import { useAuth } from '../hooks/useAuth';
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  TouchableOpacity,
+  Linking,
+  ScrollView,
+  Dimensions,
+  Modal,
+  TextInput,
+  Alert,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { supabase } from "../lib/supabase";
+import { useAuth } from "../hooks/useAuth";
 
-const { height } = Dimensions.get('window');
+const { height } = Dimensions.get("window");
 
-const PointDetail = ({ point, onClose, distance, onFavorite, isFavorite: propIsFavorite }) => {
+const PointDetail = ({
+  point,
+  onClose,
+  distance,
+  onFavorite,
+  isFavorite: propIsFavorite,
+}) => {
   const { user } = useAuth();
   const [userInfo, setUserInfo] = useState(null);
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [rating, setRating] = useState(0);
-  const [comment, setComment] = useState('');
+  const [comment, setComment] = useState("");
   const [pointRating, setPointRating] = useState(0);
   const [loading, setLoading] = useState(false);
   const [isFavorite, setIsFavorite] = useState(propIsFavorite);
@@ -25,7 +43,7 @@ const PointDetail = ({ point, onClose, distance, onFavorite, isFavorite: propIsF
       checkFavoriteStatus();
     }
   }, [user, point]);
-  
+
   useEffect(() => {
     setIsFavorite(propIsFavorite);
   }, [propIsFavorite]);
@@ -53,7 +71,7 @@ const PointDetail = ({ point, onClose, distance, onFavorite, isFavorite: propIsF
   // Verificar status de favorito
   const checkFavoriteStatus = async () => {
     if (!user?.id || !userInfo) return;
-    
+
     try {
       const { data, error } = await supabase
         .from("favoritos")
@@ -62,7 +80,7 @@ const PointDetail = ({ point, onClose, distance, onFavorite, isFavorite: propIsF
         .eq("ponto_id", point.id)
         .single();
 
-      if (error && error.code !== 'PGRST116') {
+      if (error && error.code !== "PGRST116") {
         console.error("Erro ao verificar favorito:", error);
         return;
       }
@@ -76,12 +94,18 @@ const PointDetail = ({ point, onClose, distance, onFavorite, isFavorite: propIsF
   // Alternar favorito
   const toggleFavorito = async () => {
     if (!user?.id) {
-      Alert.alert("Atenção", "Você precisa estar logado para favoritar pontos turísticos.");
+      Alert.alert(
+        "Atenção",
+        "Você precisa estar logado para favoritar pontos turísticos."
+      );
       return;
     }
 
     if (!userInfo) {
-      Alert.alert("Erro", "Não foi possível obter suas informações. Tente novamente.");
+      Alert.alert(
+        "Erro",
+        "Não foi possível obter suas informações. Tente novamente."
+      );
       return;
     }
 
@@ -98,13 +122,11 @@ const PointDetail = ({ point, onClose, distance, onFavorite, isFavorite: propIsF
         setIsFavorite(false);
       } else {
         // Adicionar aos favoritos
-        const { error } = await supabase
-          .from("favoritos")
-          .insert({
-            usuario_id: userInfo.id,
-            ponto_id: point.id,
-            data_adicionado: new Date().toISOString()
-          });
+        const { error } = await supabase.from("favoritos").insert({
+          usuario_id: userInfo.id,
+          ponto_id: point.id,
+          data_adicionado: new Date().toISOString(),
+        });
 
         if (error) throw error;
         setIsFavorite(true);
@@ -134,7 +156,8 @@ const PointDetail = ({ point, onClose, distance, onFavorite, isFavorite: propIsF
       }
 
       if (data && data.length > 0) {
-        const average = data.reduce((sum, item) => sum + item.nota, 0) / data.length;
+        const average =
+          data.reduce((sum, item) => sum + item.nota, 0) / data.length;
         setPointRating(Math.round(average));
       }
     } catch (err) {
@@ -145,13 +168,19 @@ const PointDetail = ({ point, onClose, distance, onFavorite, isFavorite: propIsF
   // Salvar avaliação
   const saveRating = async () => {
     if (!user?.id || !userInfo) {
-      Alert.alert("Atenção", "Você precisa estar logado para avaliar pontos turísticos.");
+      Alert.alert(
+        "Atenção",
+        "Você precisa estar logado para avaliar pontos turísticos."
+      );
       setShowRatingModal(false);
       return;
     }
 
     if (rating === 0) {
-      Alert.alert("Erro", "Por favor, selecione uma avaliação de 1 a 5 estrelas.");
+      Alert.alert(
+        "Erro",
+        "Por favor, selecione uma avaliação de 1 a 5 estrelas."
+      );
       return;
     }
 
@@ -167,7 +196,7 @@ const PointDetail = ({ point, onClose, distance, onFavorite, isFavorite: propIsF
         .single();
 
       let result;
-      
+
       if (existingRating) {
         // Atualizar avaliação existente
         result = await supabase
@@ -175,24 +204,24 @@ const PointDetail = ({ point, onClose, distance, onFavorite, isFavorite: propIsF
           .update({
             nota: rating,
             comentario: comment,
-            data_avaliacao: new Date().toISOString()
+            data_avaliacao: new Date().toISOString(),
           })
           .eq("id", existingRating.id);
       } else {
         // Inserir nova avaliação
-        result = await supabase
-          .from("avaliacoes")
-          .insert([{
+        result = await supabase.from("avaliacoes").insert([
+          {
             usuario_id: userInfo.id,
             ponto_id: point.id,
             nota: rating,
             comentario: comment,
-            data_avaliacao: new Date().toISOString()
-          }]);
+            data_avaliacao: new Date().toISOString(),
+          },
+        ]);
       }
 
       if (result.error) throw result.error;
-      
+
       Alert.alert("Sucesso", "Sua avaliação foi salva com sucesso!");
       setShowRatingModal(false);
       fetchPointRating(); // Atualizar a avaliação média
@@ -215,38 +244,39 @@ const PointDetail = ({ point, onClose, distance, onFavorite, isFavorite: propIsF
   const estimatedTime = Math.round(safeDistance * 5);
   const hours = Math.floor(estimatedTime / 60);
   const minutes = estimatedTime % 60;
-  const timeText = hours > 0 
-    ? `${hours} h ${minutes} min` 
-    : `${minutes} min`;
+  const timeText = hours > 0 ? `${hours} h ${minutes} min` : `${minutes} min`;
 
   return (
     <SafeAreaView style={styles.container}>
       {/* Imagem de fundo */}
-      <Image 
-        source={{ uri: point.url_img }} 
-        style={styles.backgroundImage} 
+      <Image
+        source={{ uri: point.url_img }}
+        style={styles.backgroundImage}
         resizeMode="cover"
       />
-      
+
       {/* Botões superiores */}
       <View style={styles.topButtons}>
         <TouchableOpacity style={styles.backButton} onPress={onClose}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.favoriteButton} onPress={toggleFavorito}>
-          <Ionicons 
-            name={isFavorite ? "star" : "star-outline"} 
-            size={24} 
-            color={isFavorite ? "#f7a000" : "#fff"} 
+
+        <TouchableOpacity
+          style={styles.favoriteButton}
+          onPress={toggleFavorito}
+        >
+          <Ionicons
+            name={isFavorite ? "star" : "star-outline"}
+            size={24}
+            color={isFavorite ? "#f7a000" : "#fff"}
           />
         </TouchableOpacity>
       </View>
-      
+
       {/* Card de informações */}
       <View style={styles.infoCard}>
         <View style={styles.contentContainer}>
-          <ScrollView 
+          <ScrollView
             style={styles.scrollView}
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={true}
@@ -254,51 +284,69 @@ const PointDetail = ({ point, onClose, distance, onFavorite, isFavorite: propIsF
             {/* Nome e avaliação */}
             <Text style={styles.title}>{point.nome}</Text>
             <View style={styles.ratingContainer}>
-              <View style={styles.starsContainer}>
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <Ionicons 
-                    key={star}
-                    name={star <= (pointRating || point.rating || 0) ? "star" : "star-outline"} 
-                    size={16} 
-                    color="#f7a000" 
-                    style={styles.starIcon}
-                  />
-                ))}
+              <View style={styles.starsRow}>
+                <View style={styles.starsContainer}>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Ionicons
+                      key={star}
+                      name={
+                        star <= (pointRating || point.rating || 0)
+                          ? "star"
+                          : "star-outline"
+                      }
+                      size={18}
+                      color="#f7a000"
+                      style={styles.starIcon}
+                    />
+                  ))}
+                </View>
+
+                {pointRating > 0 && (
+                  <Text style={styles.ratingNumber}>
+                    {pointRating.toFixed(1)}
+                  </Text>
+                )}
               </View>
             </View>
-            
+
             {/* Distância e tempo */}
             <View style={styles.statsContainer}>
               <View style={styles.statItem}>
-                <Text style={styles.statValue}>{safeDistance.toFixed(1)} km</Text>
+                <Text style={styles.statValue}>
+                  {safeDistance.toFixed(1)} km
+                </Text>
                 <Text style={styles.statLabel}>Distância</Text>
               </View>
-              
+
               <View style={styles.statDivider} />
-              
+
               <View style={styles.statItem}>
                 <Text style={styles.statValue}>{timeText}</Text>
                 <Text style={styles.statLabel}>Tempo estimado</Text>
               </View>
             </View>
-            
+
             {/* Descrição */}
             <Text style={styles.description}>
-              {point.descricao || `${point.nome} é um local favorito entre moradores e visitantes! Este ponto turístico oferece vistas deslumbrantes e experiências únicas. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.`}
+              {point.descricao ||
+                `${point.nome} é um local favorito entre moradores e visitantes! Este ponto turístico oferece vistas deslumbrantes e experiências únicas. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.`}
             </Text>
-            
+
             {/* Espaço adicional para garantir que o conteúdo role acima dos botões fixos */}
             <View style={styles.bottomPadding} />
           </ScrollView>
         </View>
-        
+
         {/* Botões de ação fixos */}
         <View style={styles.fixedActionButtons}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.rateButton}
             onPress={() => {
               if (!user) {
-                Alert.alert("Atenção", "Você precisa estar logado para avaliar pontos turísticos.");
+                Alert.alert(
+                  "Atenção",
+                  "Você precisa estar logado para avaliar pontos turísticos."
+                );
                 return;
               }
               setShowRatingModal(true);
@@ -306,7 +354,7 @@ const PointDetail = ({ point, onClose, distance, onFavorite, isFavorite: propIsF
           >
             <Text style={styles.buttonText}>Avaliar</Text>
           </TouchableOpacity>
-          
+
           <TouchableOpacity style={styles.navigateButton} onPress={openInMaps}>
             <Text style={styles.buttonText}>Visitar</Text>
           </TouchableOpacity>
@@ -323,23 +371,20 @@ const PointDetail = ({ point, onClose, distance, onFavorite, isFavorite: propIsF
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Avaliar {point.nome}</Text>
-            
+
             <View style={styles.ratingStarsContainer}>
               {[1, 2, 3, 4, 5].map((star) => (
-                <TouchableOpacity 
-                  key={star}
-                  onPress={() => setRating(star)}
-                >
-                  <Ionicons 
-                    name={star <= rating ? "star" : "star-outline"} 
-                    size={32} 
-                    color="#f7a000" 
+                <TouchableOpacity key={star} onPress={() => setRating(star)}>
+                  <Ionicons
+                    name={star <= rating ? "star" : "star-outline"}
+                    size={32}
+                    color="#f7a000"
                     style={styles.ratingStarIcon}
                   />
                 </TouchableOpacity>
               ))}
             </View>
-            
+
             <TextInput
               style={styles.commentInput}
               placeholder="Deixe um comentário (opcional)"
@@ -348,26 +393,26 @@ const PointDetail = ({ point, onClose, distance, onFavorite, isFavorite: propIsF
               value={comment}
               onChangeText={setComment}
             />
-            
+
             <View style={styles.modalButtons}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.cancelButton}
                 onPress={() => {
                   setShowRatingModal(false);
                   setRating(0);
-                  setComment('');
+                  setComment("");
                 }}
               >
                 <Text style={styles.cancelButtonText}>Cancelar</Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity 
+
+              <TouchableOpacity
                 style={[styles.submitButton, loading && styles.disabledButton]}
                 onPress={saveRating}
                 disabled={loading}
               >
                 <Text style={styles.submitButtonText}>
-                  {loading ? 'Salvando...' : 'Enviar Avaliação'}
+                  {loading ? "Salvando..." : "Enviar Avaliação"}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -381,19 +426,19 @@ const PointDetail = ({ point, onClose, distance, onFavorite, isFavorite: propIsF
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: "#000",
   },
   backgroundImage: {
-    width: '100%',
-    height: '45%',
+    width: "100%",
+    height: "45%",
   },
   topButtons: {
-    position: 'absolute',
+    position: "absolute",
     top: 20,
     left: 0,
     right: 0,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     paddingHorizontal: 20,
     zIndex: 10,
   },
@@ -401,25 +446,25 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   favoriteButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   infoCard: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    height: '60%',
-    backgroundColor: '#fff',
+    height: "60%",
+    backgroundColor: "#fff",
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
   },
@@ -437,117 +482,117 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#000',
+    fontWeight: "bold",
+    color: "#000",
     marginBottom: 8,
   },
   ratingContainer: {
     marginBottom: 20,
   },
   starsContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginBottom: 4,
   },
   starIcon: {
     marginRight: 2,
   },
   statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 20,
     paddingVertical: 16,
     borderTopWidth: 1,
     borderBottomWidth: 1,
-    borderColor: '#eee',
+    borderColor: "#eee",
   },
   statItem: {
-    alignItems: 'center',
+    alignItems: "center",
     flex: 1,
   },
   statValue: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#000',
+    fontWeight: "bold",
+    color: "#000",
     marginBottom: 4,
   },
   statLabel: {
     fontSize: 12,
-    color: '#666',
+    color: "#666",
   },
   statDivider: {
     width: 1,
     height: 30,
-    backgroundColor: '#eee',
+    backgroundColor: "#eee",
   },
   description: {
     fontSize: 14,
     lineHeight: 20,
-    color: '#333',
+    color: "#333",
     marginBottom: 20,
   },
   bottomPadding: {
     height: 20,
   },
   fixedActionButtons: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    backgroundColor: '#fff',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    backgroundColor: "#fff",
     paddingHorizontal: 24,
     paddingVertical: 16,
     borderTopWidth: 1,
-    borderTopColor: '#eee',
+    borderTopColor: "#eee",
   },
   rateButton: {
     flex: 1,
-    backgroundColor: '#c3073f',
+    backgroundColor: "#c3073f",
     borderRadius: 8,
     paddingVertical: 14,
-    alignItems: 'center',
+    alignItems: "center",
     marginRight: 8,
   },
   navigateButton: {
     flex: 1,
-    backgroundColor: '#2c2338',
+    backgroundColor: "#2c2338",
     borderRadius: 8,
     paddingVertical: 14,
-    alignItems: 'center',
+    alignItems: "center",
     marginLeft: 8,
   },
   buttonText: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontWeight: "bold",
+    color: "#fff",
   },
   // Estilos para o modal de avaliação
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
     padding: 20,
   },
   modalContent: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 16,
     padding: 24,
-    width: '100%',
+    width: "100%",
     maxWidth: 400,
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#000',
+    fontWeight: "bold",
+    color: "#000",
     marginBottom: 20,
-    textAlign: 'center',
+    textAlign: "center",
   },
   ratingStarsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     marginBottom: 24,
   },
   ratingStarIcon: {
@@ -555,45 +600,55 @@ const styles = StyleSheet.create({
   },
   commentInput: {
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: "#ddd",
     borderRadius: 8,
     padding: 12,
     height: 100,
-    textAlignVertical: 'top',
+    textAlignVertical: "top",
     marginBottom: 24,
   },
   modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   cancelButton: {
     flex: 1,
     paddingVertical: 12,
-    alignItems: 'center',
+    alignItems: "center",
     marginRight: 8,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: "#ddd",
     borderRadius: 8,
   },
   cancelButtonText: {
-    color: '#666',
-    fontWeight: 'bold',
+    color: "#666",
+    fontWeight: "bold",
   },
   submitButton: {
     flex: 1,
-    backgroundColor: '#f7a000',
+    backgroundColor: "#f7a000",
     paddingVertical: 12,
-    alignItems: 'center',
+    alignItems: "center",
     marginLeft: 8,
     borderRadius: 8,
   },
   disabledButton: {
-    backgroundColor: '#ccc',
+    backgroundColor: "#ccc",
   },
   submitButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+    color: "#fff",
+    fontWeight: "bold",
   },
+  starsRow: {
+  flexDirection: 'row',
+  alignItems: 'center',
+},
+ratingNumber: {
+  marginLeft: 8,
+  fontSize: 16,
+  fontWeight: 'bold',
+  color: '#f7a000',
+},
 });
 
 export default PointDetail;
