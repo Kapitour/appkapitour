@@ -20,45 +20,50 @@ import { getWeatherByCity } from "./weatherApi.js";
 const getWeatherSuggestion = (weatherData) => {
   const weatherId = weatherData.weather[0].id;
 
-  // Clima Ensolarado ou Céu Limpo (IDs 800)
+  // ☀️ Clima Ensolarado ou Céu Limpo (IDs 800)
   if (weatherId === 800) {
     return {
       icon: "sunny-outline",
-      title: "Dia de Ouro em Maricá!",
-      text: "O sol está brilhando! É o dia perfeito para curtir as praias de Itaipuaçu ou Ponta Negra. Não se esqueça do protetor solar!"
+      title: "Sol Radiante em Maricá!",
+      text: "O céu está limpo e o sol promete um espetáculo! Aproveite para relaxar nas praias de Itaipuaçu, Barra ou Ponta Negra — o mar está perfeito para um mergulho ou uma boa caminhada à beira-mar. Para quem curte natureza, a Cachoeira do Espraiado é uma ótima pedida. Lembre-se do protetor solar, chapéu e muita hidratação!"
     };
   }
-  // Nuvens (IDs 801-804)
+
+  // ☁️ Nuvens (IDs 801-804)
   if (weatherId >= 801 && weatherId <= 804) {
     return {
       icon: "cloudy-outline",
-      title: "Clima Agradável e Suave",
-      text: "O tempo está nublado, ideal para uma caminhada na orla da lagoa ou para explorar o centrinho da cidade sem o calor intenso."
+      title: "Céu Encoberto, Clima Charmoso",
+      text: "O tempo está parcialmente nublado, com uma brisa leve — ótimo para explorar sem o calor intenso. Faça um passeio pela orla de Araçatiba ou conheça o Mirante da Serra da Tiririca, onde as nuvens criam uma vista cinematográfica da cidade. É um dia perfeito para fotos e para descobrir novos cafés e lojinhas no Centro ou em Itaipuaçu."
     };
   }
-  // Chuva ou Chuvisco (IDs 2xx, 3xx, 5xx)
-  if ((weatherId >= 200 && weatherId <= 531)) {
+
+  // 🌧️ Chuva ou Chuvisco (IDs 2xx, 3xx, 5xx)
+  if (weatherId >= 200 && weatherId <= 531) {
     return {
       icon: "rainy-outline",
-      title: "Aconchego e Descobertas",
-      text: "A chuva chegou! Que tal explorar a gastronomia local em um dos restaurantes do Polo Gastronômico da Rua 4, ou visitar a Casa de Cultura?"
+      title: "Maricá Sob a Chuva",
+      text: "A chuva chegou trazendo aquele clima gostoso de aconchego! Que tal curtir o dia em lugares cobertos como a Casa de Cultura, o Cinema Público Municipal ou algum restaurante do Polo Gastronômico da Rua 4, em Itaipuaçu? Aproveite para experimentar pratos locais e tirar fotos criativas com o reflexo das ruas molhadas."
     };
   }
-  // Névoa, Neblina (IDs 7xx)
+
+  // 🌫️ Névoa, Neblina (IDs 7xx)
   if (weatherId >= 701 && weatherId <= 781) {
     return {
       icon: "reorder-three-outline",
-      title: "Cenário Misterioso",
-      text: "A névoa cria uma atmosfera única para fotos incríveis na Restinga de Maricá. Tenha cuidado extra nas estradas e na serra!"
+      title: "Névoa Mística em Maricá",
+      text: "A névoa cobre as lagoas e serras, criando uma paisagem de filme! Vá cedo à Restinga de Maricá ou ao mirante do Espraiado para registrar fotos etéreas e ver o nascer do sol filtrando pela névoa. Só tome cuidado ao dirigir — a visibilidade pode estar reduzida, especialmente nas estradas da Serra da Tiririca."
     };
   }
-  // Caso padrão
+
+  // ❓ Caso padrão
   return {
     icon: "information-circle-outline",
-    title: "Aproveite o Dia!",
-    text: "Confira a previsão detalhada acima e planeje o melhor roteiro para aproveitar Maricá hoje."
+    title: "Descubra Maricá!",
+    text: "O clima está variável hoje. Que tal planejar um roteiro misto? Comece com um passeio pela Lagoa de Araçatiba, visite o Mercado das Artes e termine o dia assistindo ao pôr do sol na praia de Itaipuaçu. Maricá tem experiências incríveis em qualquer tempo!"
   };
 };
+
 
 
 export default function WeatherScreen({ navigation }) { 
