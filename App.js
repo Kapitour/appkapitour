@@ -19,6 +19,8 @@ import Mapa from "./Screens/Mapa";
 import Cadastro from "./Screens/Cadastro";
 import AreaUsuario from "./Screens/AreaUsuario";
 import LeitorQR from "./Screens/LeitorQR";
+// ✅ 1. Import da tela de clima no lugar certo (junto com as outras)
+import WeatherScreen from "./Screens/WeatherScreen"; 
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -40,6 +42,8 @@ function MainStack() {
       <Stack.Screen name="MainTabs" component={MainTabs} />
       <Stack.Screen name="LeitorQR" component={LeitorQR} />
       <Stack.Screen name="Contato" component={Contato} />
+      {/* ✅ 2. Tela de clima registrada dentro do navegador principal */}
+      <Stack.Screen name="Clima" component={WeatherScreen} /> 
     </Stack.Navigator>
   );
 }
@@ -142,7 +146,6 @@ export default function App() {
     const hideNavigationBar = async () => {
       try {
         await SystemUI.setBackgroundColorAsync("black");
-        //await NavigationBar.setBehaviorAsync("inset-swipe");
         await NavigationBar.setVisibilityAsync("hidden");
       } catch (error) {
         console.warn("Erro ao esconder NavigationBar:", error);
@@ -175,9 +178,9 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    overflow: "hidden", // importante para o arredondamento funcionar
-    elevation: 5, // sombra Android
-    shadowColor: "#000", // sombra iOS
+    overflow: "hidden", 
+    elevation: 5, 
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: -3 },
     shadowOpacity: 0.1,
     shadowRadius: 3,

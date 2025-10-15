@@ -22,8 +22,8 @@ import DetalhesRota from "./DetalhesRotas";
 import { supabase } from "../lib/supabase";
 
 const { width } = Dimensions.get("window");
-const CARD_WIDTH = width * 0.6;  // Largura do card reduzida
-const SPACING = 15;  // Aumento do espaçamento entre os cards
+const CARD_WIDTH = width * 0.6;
+const SPACING = 15;
 
 export default function Home() {
   const navigation = useNavigation();
@@ -33,8 +33,6 @@ export default function Home() {
 
   const flatListRef = useRef(null);
   const scrollX = useRef(new Animated.Value(0)).current;
-
-  // Categorias e mapa saem da Home; card leva ao Mapa
 
   const patrocinadores = [
     {
@@ -118,17 +116,14 @@ export default function Home() {
       <SafeAreaView style={styles.safeArea}>
         <StatusBar barStyle="light-content" backgroundColor="#c83349" />
         <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-          {/* Imagem de topo */}
           <View style={styles.topImageWrapper}>
             <ContainerImg style={styles.containerimg} />
-            {/* Botão menu hamburguer transparente no topo direito */}
             <TouchableOpacity style={styles.menuButton}>
               <Ionicons name="menu" size={32} color="#fff" />
             </TouchableOpacity>
           </View>
 
           <View style={styles.content}>
-            {/* Slogan */}
             <LinearGradient 
               colors={["#c833498d", "#e65a6d8a", "#f7a10069"]} 
               start={{ x: 0, y: 0 }} 
@@ -141,13 +136,11 @@ export default function Home() {
               </Text>
             </LinearGradient>
 
-            {/* Top 10 Guias mais bem avaliados */}
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Top 10 Guias mais bem avaliados</Text>
             </View>
             <MostCaroussel onRotaPress={setRotaSelecionada} />
 
-            {/* Descobrir no mapa */}
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Descubra no Mapa</Text>
@@ -174,7 +167,21 @@ export default function Home() {
               </TouchableOpacity>
             </View>
 
-            {/* Patrocinadores */}
+            {/* ============== BOTÃO DO CLIMA ADICIONADO AQUI ============== */}
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Previsão do Tempo</Text>
+              </View>
+              <TouchableOpacity
+                style={styles.weatherButton}
+                onPress={() => navigation.navigate('Clima')}
+              >
+                <Ionicons name="cloudy-outline" size={24} color="white" />
+                <Text style={styles.weatherButtonText}>Consultar Clima em Maricá</Text>
+              </TouchableOpacity>
+            </View>
+            {/* ============================================================= */}
+
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Nossos Parceiros</Text>
@@ -200,7 +207,6 @@ export default function Home() {
             </View>
           </View>
 
-          {/* Footer */}
           <LinearGradient colors={["#c83349", "#0f142c"]} style={styles.footer}>
             <Text style={styles.footerText}>© 2023 Kapitour - Todos os direitos reservados</Text>
           </LinearGradient>
@@ -211,226 +217,166 @@ export default function Home() {
 }
 
 const styles = StyleSheet.create({
-  // SafeArea: envolve toda a aplicação, garantindo que o conteúdo não ultrapasse áreas
-  // que podem ser cobertas por barras de status ou outros componentes nativos.
   safeArea: {
-    flex: 1, // Faz com que o componente ocupe toda a altura da tela.
+    flex: 1,
   },
-  
-  // Container principal do conteúdo.
   container: {
-    flex: 1, // Faz com que o conteúdo ocupe toda a altura disponível.
-    paddingTop: 20, // Adiciona espaçamento no topo para não colidir com a barra de status.
-    paddingHorizontal: 15, // Adiciona margens laterais para evitar que o conteúdo encoste nas bordas
-    paddingBottom: 100, // Adiciona espaçamento inferior para o BottomMenu
+    flex: 1,
+    paddingTop: 20,
+    paddingHorizontal: 15,
+    paddingBottom: 100,
     marginBottom: 50
   },
-
-  // Wrapper (caixa) que envolve a imagem do topo da tela.
   topImageWrapper: {
-    height: 50, // Altura da imagem de topo.
-    justifyContent: "flex-end", // Posiciona o conteúdo no final da área (parte inferior).
+    height: 50,
+    justifyContent: "flex-end",
   },
-
-  // Estilo da imagem do topo.
   containerimg: {
-    width: "100%", // A imagem ocupa toda a largura da tela.
-    height: "100%", // A altura da imagem é igual a altura definida do wrapper.
+    width: "100%",
+    height: "100%",
   },
-
-  // Botão de menu, posicionado no canto superior direito.
   menuButton: {
-    position: "absolute", // Permite posicionar o botão em qualquer lugar da tela.
-    top: 10, // Distância de 10 pixels do topo.
-    right: 10, // Distância de 10 pixels da direita.
-    zIndex: 1, // Garante que o botão fique acima de outros componentes.
+    position: "absolute",
+    top: 10,
+    right: 10,
+    zIndex: 1,
   },
-
-  // Estilo do slogan que aparece logo após a imagem do topo.
   slogan: {
-    padding: 15, // Espaçamento interno da área do slogan.
-    margin: 10, // Margem ao redor do slogan, afastando ele das bordas.
-    borderRadius: 8, // Bordas arredondadas.
-    alignItems: "center", // Centraliza os itens dentro do slogan.
-    justifyContent: "center", // Alinha os itens no centro verticalmente.
-    textAlign: "center", // Alinha o texto do slogan no centro.
-    flexDirection: "row", // Organiza o ícone e o texto em linha.
+    padding: 15,
+    margin: 10,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    textAlign: "center",
+    flexDirection: "row",
   },
-
-  // Ícone do compasso no slogan.
   sloganIcon: {
-    marginRight: 0, // Retira qualquer margem à direita do ícone.
+    marginRight: 0,
   },
-
-  // Texto dentro do slogan.
   sloganText: {
-    color: "#fff", // Cor branca para o texto.
-    fontSize: 14, // Tamanho da fonte.
-    fontWeight: "600", // Peso da fonte (semi-negrito).
-    textAlign: "center", // Alinha o texto no centro.
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
+    textAlign: "center",
   },
-
-  // Cabeçalho das seções, que inclui título e um botão para expandir/ocultar.
   sectionHeader: {
-    flexDirection: "row", // Organiza título e botão horizontalmente.
-    justifyContent: "space-between", // Distribui o espaço entre o título e o botão.
-    alignItems: "center", // Alinha os itens verticalmente no centro.
-    marginBottom: 10, // Espaçamento inferior para separar das próximas seções.
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
   },
-
-  // Título das seções, como "Categorias", "Rotas mais realizadas".
   sectionTitle: {
-    fontSize: 20, // Tamanho da fonte.
-    fontWeight: "bold", // Deixa o texto em negrito.
-    color: "#fff", // Cor do texto.
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#fff",
   },
-
-  // Estilo do link "Ver todas" ou "Expandir" nas seções.
   seeAll: {
-    color: "#fff", // Cor branca para o link.
-    fontSize: 14, // Tamanho da fonte.
+    color: "#fff",
+    fontSize: 14,
   },
-
-  // Estilo para a seção de Categorias e outros conteúdos.
   section: {
-    marginBottom: 30, // Espaço entre as seções.
+    marginBottom: 30,
   },
-
-  // Container para exibir os filtros de categorias.
   categoriasContainer: {
-    marginTop: 10, // Espaço superior para dar distância do título da categoria.
+    marginTop: 10,
   },
-
-  // Estilo dos botões de filtro de categorias.
   filtro: {
-    paddingVertical: 10, // Espaçamento vertical (dentro do botão).
-    paddingHorizontal: 15, // Espaçamento horizontal (dentro do botão).
-    backgroundColor: "#fff", // Cor de fundo branca.
-    marginRight: 10, // Espaçamento à direita entre os filtros.
-    borderRadius: 20, // Bordas arredondadas.
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    backgroundColor: "#fff",
+    marginRight: 10,
+    borderRadius: 20,
   },
-
-  // Estilo quando um filtro de categoria está selecionado.
   filtroSelecionado: {
-    backgroundColor: "#c83349", // Cor de fundo vermelha para o filtro selecionado.
+    backgroundColor: "#c83349",
   },
-
-  // Texto dentro do botão de filtro de categoria.
   textoCategoria: {
-    color: "#333", // Cor do texto (cinza escuro).
+    color: "#333",
   },
-
-  // Wrapper (caixa) do mapa, que só aparece quando categorias são exibidas.
   mapaWrapper: {
-    marginTop: 20, // Distância superior entre o mapa e os outros componentes.
-    backgroundColor: "#fff", // Cor de fundo branca.
-    padding: 10, // Espaçamento interno da área do mapa.
-    borderRadius: 10, // Bordas arredondadas.
+    marginTop: 20,
+    backgroundColor: "#fff",
+    padding: 10,
+    borderRadius: 10,
   },
-
-  // Botão para fechar o mapa.
   closeMapButton: {
-    position: "absolute", // Posiciona o botão de fechamento sobre o mapa.
-    top: 10, // Distância do topo.
-    right: 10, // Distância da direita.
-    backgroundColor: "#c83349", // Cor de fundo vermelha.
-    borderRadius: 20, // Bordas arredondadas.
-    padding: 5, // Padding pequeno para um clique confortável.
+    position: "absolute",
+    top: 10,
+    right: 10,
+    backgroundColor: "#c83349",
+    borderRadius: 20,
+    padding: 5,
   },
-
-  // Estilo do carrossel de patrocinadores.
   carouselContainer: {
-    height: 240, // Altura do carrossel.
-    marginTop: 10, // Distância superior do carrossel.
+    height: 240,
+    marginTop: 10,
   },
-
-  // Estilo do card de patrocinador.
   card: {
-    backgroundColor: "#fff", // Cor de fundo branca para o card.
-    borderRadius: 20, // Bordas arredondadas.
-    padding: 15, // Espaçamento interno do card.
-    width: CARD_WIDTH, // Largura do card baseada em uma constante.
-    marginHorizontal: SPACING / 2, // Espaçamento horizontal entre os cards.
-    alignItems: "center", // Centraliza o conteúdo dentro do card.
-    justifyContent: "center", // Alinha o conteúdo centralizado.
-    shadowColor: "#000", // Cor da sombra.
-    shadowOffset: { width: 0, height: 2 }, // Deslocamento da sombra.
-    shadowOpacity: 0.25, // Opacidade da sombra.
-    shadowRadius: 3.84, // Raio de desfocagem da sombra.
-    elevation: 5, // Sombra no Android.
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    padding: 15,
+    width: CARD_WIDTH,
+    marginHorizontal: SPACING / 2,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
-
-  // Cabeçalho do card, geralmente onde fica o ícone ou logo.
   cardHeader: {
-    marginBottom: 15, // Espaçamento inferior entre a imagem e o conteúdo.
-    alignItems: "center", // Alinha o conteúdo do cabeçalho no centro.
+    marginBottom: 15,
+    alignItems: "center",
   },
-
-  // Container para a imagem dentro do card.
   cardImageContainer: {
-    width: 80, // Largura do container da imagem.
-    height: 80, // Altura do container da imagem.
-    borderRadius: 40, // Faz com que a imagem fique circular.
-    overflow: "hidden", // Garante que a imagem não ultrapasse os limites do container.
-    backgroundColor: "transparent", // Fundo transparente.
-    justifyContent: "center", // Centraliza a imagem dentro do container.
-    alignItems: "center", // Alinha a imagem dentro do container.
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    overflow: "hidden",
+    backgroundColor: "transparent",
+    justifyContent: "center",
+    alignItems: "center",
   },
-
-  // Estilo para imagens circulares (logo ou ícones).
   imageCircle: {
-    width: 80, // Largura da imagem circular.
-    height: 80, // Altura da imagem circular.
-    borderRadius: 40, // Bordas arredondadas para formar o círculo.
+    width: 80,
+    height: 80,
+    borderRadius: 40,
   },
-
-  // Estilo para imagens da incubadora (não circulares).
   imageIncubadora: {
-    width: "100%", // A imagem ocupa toda a largura do container.
-    height: 80, // Altura fixa para a imagem da incubadora.
-    resizeMode: "contain", // A imagem é ajustada para caber sem distorcer.
+    width: "100%",
+    height: 80,
+    resizeMode: "contain",
   },
-
-  // Conteúdo dentro do card, onde fica o título, descrição, etc.
   cardContent: {
-    alignItems: "center", // Centraliza o conteúdo dentro do card.
+    alignItems: "center",
   },
-
-  // Título do patrocinador no card.
   cardTitle: {
-    color: "#c83349", // Cor vermelha para o título.
-    fontSize: 16, // Tamanho da fonte.
-    fontWeight: "bold", // Deixa o título em negrito.
-    marginBottom: 8, // Espaçamento inferior entre o título e o texto.
-    textAlign: "center", // Alinha o título no centro.
+    color: "#c83349",
+    fontSize: 16,
+    fontWeight: "bold",
+    marginBottom: 8,
+    textAlign: "center",
   },
-
-  // Texto descritivo dentro do card.
   cardText: {
-    color: "#333", // Cor do texto (cinza escuro).
-    textAlign: "center", // Alinha o texto no centro.
-    marginBottom: 12, // Espaçamento inferior entre a descrição e o botão.
-    fontSize: 12, // Tamanho da fonte.
+    color: "#333",
+    textAlign: "center",
+    marginBottom: 12,
+    fontSize: 12,
   },
-
-  // Estilo do botão dentro do card (para abrir link, por exemplo).
   button: {
-    backgroundColor: "#c83349", // Cor de fundo vermelha.
-    flexDirection: "row", // Organiza texto e ícone horizontalmente.
-    alignItems: "center", // Alinha o ícone e o texto no centro.
-    paddingHorizontal: 12, // Espaçamento horizontal dentro do botão.
-    paddingVertical: 8, // Espaçamento vertical dentro do botão.
-    borderRadius: 20, // Bordas arredondadas.
+    backgroundColor: "#c83349",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
   },
-
-  // Texto dentro do botão.
   buttonText: {
-    color: "#fff", // Cor do texto (branca).
-    marginRight: 6, // Espaçamento à direita do texto (antes do ícone).
-    fontWeight: "600", // Peso do texto (semi-negrito).
+    color: "#fff",
+    marginRight: 6,
+    fontWeight: "600",
   },
-
-  // Estilos para o card de descoberta no mapa
   discoverCard: {
     marginHorizontal: 20,
     marginVertical: 10,
@@ -474,18 +420,36 @@ const styles = StyleSheet.create({
     fontSize: 14,
     opacity: 0.9,
   },
-  
-  // Rodapé da página.
-  footer: {
-    padding: 15, // Espaçamento interno do rodapé.
-    alignItems: "center", // Centraliza o conteúdo no rodapé.
-    justifyContent: "center", // Alinha o conteúdo no centro verticalmente.
-    backgroundColor: "#0f142c", // Cor de fundo escura para o rodapé.
-  },
 
-  // Texto do rodapé.
+  // ============== ESTILOS DO BOTÃO ADICIONADOS AQUI ==============
+  weatherButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)', // Um fundo semi-transparente para combinar
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 30,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+    marginHorizontal: 20,
+  },
+  weatherButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 10,
+  },
+  // =============================================================
+
+  footer: {
+    padding: 15,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#0f142c",
+  },
   footerText: {
-    color: "#fff", // Cor do texto (branca).
-    fontSize: 12, // Tamanho da fonte (menor que o conteúdo principal).
+    color: "#fff",
+    fontSize: 12,
   },
 });
