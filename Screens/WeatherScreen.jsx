@@ -7,7 +7,8 @@ import {
   Image,
   SafeAreaView,
   TouchableOpacity,
-  StatusBar
+  StatusBar,
+  ScrollView
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -145,7 +146,7 @@ export default function WeatherScreen({ navigation }) {
       colors={["#c83349", "#0f142c"]} 
       style={styles.safeArea}
     >
-      <SafeAreaView style={styles.safeArea}>
+      <ScrollView style={styles.safeArea}>
         <StatusBar barStyle="light-content" />
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={28} color="#fff" />
@@ -157,7 +158,7 @@ export default function WeatherScreen({ navigation }) {
           {renderContent()}
         </View>
 
-      </SafeAreaView>
+      </ScrollView>
     </LinearGradient>
   );
 }
