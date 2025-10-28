@@ -167,18 +167,32 @@ export default function Home() {
               </TouchableOpacity>
             </View>
 
-            {/* ============== BOTÃO DO CLIMA ADICIONADO AQUI ============== */}
+            {/* ============== SEÇÃO DO CLIMA COM CAPIVARA ============== */}
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Previsão do Tempo</Text>
               </View>
-              <TouchableOpacity
-                style={styles.weatherButton}
-                onPress={() => navigation.navigate('Clima')}
-              >
-                <Ionicons name="cloudy-outline" size={24} color="white" />
-                <Text style={styles.weatherButtonText}>Consultar Clima em Maricá</Text>
-              </TouchableOpacity>
+              
+              {/* Card da Capivara com Balão de Fala */}
+              <View style={styles.capybaraCard}>
+                {/* Balão de fala clicável */}
+                <TouchableOpacity 
+                  style={styles.speechBubble}
+                  onPress={() => navigation.navigate('Clima')}
+                >
+                  <View style={styles.bubbleHeader}>
+                    <Ionicons name="sunny-outline" size={24} color="#fff" />
+                    <Text style={styles.bubbleTitle}>Clima em Maricá</Text>
+                  </View>
+                  <Text style={styles.bubbleText}>Clique aqui para consultar a previsão do tempo e dicas para seu passeio!</Text>
+                </TouchableOpacity>
+                
+                {/* Imagem da capivara no lado direito */}
+                <Image
+                  source={{ uri: "https://github.com/Kapitour/Imgs-Padr-o/blob/main/KapiTempo/MASCULINO/AMENO%20-%20ENSOLARADO.png?raw=true" }}
+                  style={styles.capybaraImage}
+                />
+              </View>
             </View>
             {/* ============================================================= */}
 
@@ -441,6 +455,54 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   // =============================================================
+
+  // ============== ESTILOS DA CAPIVARA ADICIONADOS AQUI ==============
+  capybaraCard: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 10,
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    borderRadius: 20,
+    padding: 15,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    overflow: 'hidden',
+  },
+  capybaraImage: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    marginLeft: 10,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  speechBubble: {
+    flex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 15,
+    padding: 15,
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  bubbleHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  bubbleTitle: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 8,
+  },
+  bubbleText: {
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  // =================================================================
 
   footer: {
     padding: 15,

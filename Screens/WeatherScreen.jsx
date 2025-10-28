@@ -67,78 +67,78 @@ const getCapybaraWeatherInfo = (weatherData) => {
   if (tempCategory === "frio") {
     if (weatherCondition === "ensolarado") {
       if (isWindy) {
-        capybaraImage = "https://example.com/capybara-frio-ensolarado-ventania.jpg";
-        capybaraSuggestion = "Está frio e ensolarado, mas com vento forte! Leve um casaco leve e protetor solar. Clique aqui e saiba mais sobre o clima.";
+        capybaraImage = "https://github.com/Kapitour/Imgs-Padr-o/blob/main/KapiTempo/MASCULINO/FRIO%20-%20ENSOLARADO.png?raw=true";
+        capybaraSuggestion = "Está frio e ensolarado, mas com vento forte! Leve um casaco e protetor solar. Clique aqui e saiba mais sobre o clima.";
       } else {
-        capybaraImage = "https://example.com/capybara-frio-ensolarado.jpg";
-        capybaraSuggestion = "Está frio, mas o sol está brilhando! Um casaquinho leve é suficiente. Clique aqui e saiba mais sobre o clima.";
+        capybaraImage = "https://github.com/Kapitour/Imgs-Padr-o/blob/main/KapiTempo/MASCULINO/FRIO%20-%20ENSOLARADO.png?raw=true";
+        capybaraSuggestion = "Está frio, mas ensolarado! Leve um casaco e protetor solar. Clique aqui e saiba mais sobre o clima.";
       }
     } else if (weatherCondition === "nublado") {
       if (isWindy) {
-        capybaraImage = "https://example.com/capybara-frio-nublado-ventania.jpg";
-        capybaraSuggestion = "Está frio, nublado e com vento forte! Melhor levar um casaco mais pesado. Clique aqui e saiba mais sobre o clima.";
+        capybaraImage = "https://github.com/Kapitour/Imgs-Padr-o/blob/main/KapiTempo/MASCULINO/FRIO%20-%20NUBLADO.png?raw=true";
+        capybaraSuggestion = "Está frio, nublado e com vento forte! Leve um casaco bem quente. Clique aqui e saiba mais sobre o clima.";
       } else {
-        capybaraImage = "https://example.com/capybara-frio-nublado.jpg";
-        capybaraSuggestion = "Está frio e nublado! Um bom casaco vai te manter quentinho. Clique aqui e saiba mais sobre o clima.";
+        capybaraImage = "https://github.com/Kapitour/Imgs-Padr-o/blob/main/KapiTempo/MASCULINO/FRIO%20-%20NUBLADO.png?raw=true";
+        capybaraSuggestion = "Está frio e nublado! Leve um casaco. Clique aqui e saiba mais sobre o clima.";
       }
     } else if (weatherCondition === "chuvoso") {
       if (isWindy) {
-        capybaraImage = "https://example.com/capybara-frio-chuvoso-ventania.jpg";
-        capybaraSuggestion = "Está frio, chuvoso e com vento forte! Leve um guarda-chuva resistente e um casaco impermeável. Clique aqui e saiba mais sobre o clima.";
+        capybaraImage = "https://github.com/Kapitour/Imgs-Padr-o/blob/main/KapiTempo/MASCULINO/FRIO-CHUVA.png?raw=true";
+        capybaraSuggestion = "Está frio, chuvoso e com vento forte! Leve um casaco impermeável e guarda-chuva resistente. Clique aqui e saiba mais sobre o clima.";
       } else {
-        capybaraImage = "https://example.com/capybara-frio-chuvoso.jpg";
-        capybaraSuggestion = "Está frio e chuvoso! Não esqueça do guarda-chuva e um casaco impermeável. Clique aqui e saiba mais sobre o clima.";
+        capybaraImage = "https://github.com/Kapitour/Imgs-Padr-o/blob/main/KapiTempo/MASCULINO/FRIO-CHUVA.png?raw=true";
+        capybaraSuggestion = "Está frio e chuvoso! Leve um casaco impermeável e guarda-chuva. Clique aqui e saiba mais sobre o clima.";
       }
     }
   } else if (tempCategory === "ameno") {
     if (weatherCondition === "ensolarado") {
       if (isWindy) {
-        capybaraImage = "https://example.com/capybara-ameno-ensolarado-ventania.jpg";
+        capybaraImage = "https://github.com/Kapitour/Imgs-Padr-o/blob/main/KapiTempo/MASCULINO/AMENO%20-%20ENSOLARADO.png?raw=true";
         capybaraSuggestion = "Temperatura agradável e ensolarado, mas com vento forte! Leve protetor solar e talvez um casaquinho leve. Clique aqui e saiba mais sobre o clima.";
       } else {
-        capybaraImage = "https://example.com/capybara-ameno-ensolarado.jpg";
+        capybaraImage = "https://github.com/Kapitour/Imgs-Padr-o/blob/main/KapiTempo/MASCULINO/AMENO%20-%20ENSOLARADO.png?raw=true";
         capybaraSuggestion = "Temperatura perfeita e ensolarado! Não esqueça do protetor solar. Clique aqui e saiba mais sobre o clima.";
       }
     } else if (weatherCondition === "nublado") {
       if (isWindy) {
-        capybaraImage = "https://example.com/capybara-ameno-nublado-ventania.jpg";
+        capybaraImage = "https://github.com/Kapitour/Imgs-Padr-o/blob/main/KapiTempo/MASCULINO/AMENO%20-%20NUBLADO.png?raw=true";
         capybaraSuggestion = "Temperatura agradável, nublado e com vento forte! Um casaquinho leve pode ser útil. Clique aqui e saiba mais sobre o clima.";
       } else {
-        capybaraImage = "https://example.com/capybara-ameno-nublado.jpg";
+        capybaraImage = "https://github.com/Kapitour/Imgs-Padr-o/blob/main/KapiTempo/MASCULINO/AMENO%20-%20NUBLADO.png?raw=true";
         capybaraSuggestion = "Temperatura agradável e nublado! Dia perfeito para passeios ao ar livre. Clique aqui e saiba mais sobre o clima.";
       }
     } else if (weatherCondition === "chuvoso") {
       if (isWindy) {
-        capybaraImage = "https://example.com/capybara-ameno-chuvoso-ventania.jpg";
+        capybaraImage = "https://github.com/Kapitour/Imgs-Padr-o/blob/main/KapiTempo/MASCULINO/AMENO-CHUVA.png?raw=true";
         capybaraSuggestion = "Temperatura agradável, chuvoso e com vento forte! Leve um guarda-chuva resistente. Clique aqui e saiba mais sobre o clima.";
       } else {
-        capybaraImage = "https://example.com/capybara-ameno-chuvoso.jpg";
+        capybaraImage = "https://github.com/Kapitour/Imgs-Padr-o/blob/main/KapiTempo/MASCULINO/AMENO-CHUVA.png?raw=true";
         capybaraSuggestion = "Temperatura agradável e chuvoso! Não esqueça do guarda-chuva. Clique aqui e saiba mais sobre o clima.";
       }
     }
   } else if (tempCategory === "calor") {
     if (weatherCondition === "ensolarado") {
       if (isWindy) {
-        capybaraImage = "https://example.com/capybara-calor-ensolarado-ventania.jpg";
+        capybaraImage = "https://github.com/Kapitour/Imgs-Padr-o/blob/main/KapiTempo/MASCULINO/CALOR%20%2B%20ENSOLARADO.png?raw=true";
         capybaraSuggestion = "Está quente, ensolarado e com vento forte! Leve protetor solar, chapéu e muita água. Clique aqui e saiba mais sobre o clima.";
       } else {
-        capybaraImage = "https://example.com/capybara-calor-ensolarado.jpg";
+        capybaraImage = "https://github.com/Kapitour/Imgs-Padr-o/blob/main/KapiTempo/MASCULINO/CALOR%20%2B%20ENSOLARADO.png?raw=true";
         capybaraSuggestion = "Está muito quente e ensolarado! Protetor solar, chapéu e muita hidratação são essenciais. Clique aqui e saiba mais sobre o clima.";
       }
     } else if (weatherCondition === "nublado") {
       if (isWindy) {
-        capybaraImage = "https://example.com/capybara-calor-nublado-ventania.jpg";
+        capybaraImage = "https://github.com/Kapitour/Imgs-Padr-o/blob/main/KapiTempo/MASCULINO/CALOR%20%2B%20NUBLADO.png?raw=true";
         capybaraSuggestion = "Está quente, nublado e com vento forte! Mesmo sem sol, mantenha-se hidratado. Clique aqui e saiba mais sobre o clima.";
       } else {
-        capybaraImage = "https://example.com/capybara-calor-nublado.jpg";
+        capybaraImage = "https://github.com/Kapitour/Imgs-Padr-o/blob/main/KapiTempo/MASCULINO/CALOR%20%2B%20NUBLADO.png?raw=true";
         capybaraSuggestion = "Está quente e nublado! Mesmo sem sol, mantenha-se hidratado. Clique aqui e saiba mais sobre o clima.";
       }
     } else if (weatherCondition === "chuvoso") {
       if (isWindy) {
-        capybaraImage = "https://example.com/capybara-calor-chuvoso-ventania.jpg";
+        capybaraImage = "https://github.com/Kapitour/Imgs-Padr-o/blob/main/KapiTempo/MASCULINO/CALOR%20%2B%20CHUVOSO.png?raw=true";
         capybaraSuggestion = "Está quente, chuvoso e com vento forte! Chuva de verão, leve um guarda-chuva leve. Clique aqui e saiba mais sobre o clima.";
       } else {
-        capybaraImage = "https://example.com/capybara-calor-chuvoso.jpg";
+        capybaraImage = "https://github.com/Kapitour/Imgs-Padr-o/blob/main/KapiTempo/MASCULINO/CALOR%20%2B%20CHUVOSO.png?raw=true";
         capybaraSuggestion = "Está quente e chuvoso! Chuva de verão, leve um guarda-chuva leve. Clique aqui e saiba mais sobre o clima.";
       }
     }
@@ -245,16 +245,6 @@ export default function WeatherScreen({ navigation }) {
         <>
           {/* Card da Capivara com Balão de Fala */}
           <View style={styles.capybaraCard}>
-            <Image
-              source={{ uri: capybaraInfo.capybaraImage }}
-              style={styles.capybaraImage}
-              // Fallback para uma imagem padrão caso a URL não funcione
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src = "https://via.placeholder.com/200x200?text=Capivara";
-              }}
-            />
-            
             {/* Balão de fala clicável */}
             <TouchableOpacity 
               style={styles.speechBubble}
@@ -266,6 +256,17 @@ export default function WeatherScreen({ navigation }) {
               </View>
               <Text style={styles.bubbleText}>{capybaraInfo.capybaraSuggestion}</Text>
             </TouchableOpacity>
+            
+            {/* Imagem da capivara agora no lado direito */}
+            <Image
+              source={{ uri: capybaraInfo.capybaraImage }}
+              style={styles.capybaraImage}
+              // Fallback para uma imagem padrão caso a URL não funcione
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = "https://via.placeholder.com/200x200?text=Capivara";
+              }}
+            />
           </View>
           
           {/* Detalhes do clima (mostrados apenas quando clicado no balão) */}
@@ -419,7 +420,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    marginRight: 15,
+    marginLeft: 15,
     borderWidth: 2,
     borderColor: 'rgba(255, 255, 255, 0.3)',
   },
