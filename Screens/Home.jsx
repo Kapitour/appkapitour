@@ -118,9 +118,7 @@ export default function Home() {
         <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
           <View style={styles.topImageWrapper}>
             <ContainerImg style={styles.containerimg} />
-            <TouchableOpacity style={styles.menuButton}>
-              <Ionicons name="menu" size={32} color="#fff" />
-            </TouchableOpacity>
+            
           </View>
 
           <View style={styles.content}>
