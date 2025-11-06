@@ -895,19 +895,21 @@ const styles = StyleSheet.create({
   leitorButtonText: { color: "#fff", marginLeft: 5 },
   cupom: {
     backgroundColor: "#c83349",
-    padding: 12,
-    borderRadius: 8,
+    
+    borderRadius: 18,
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: 15,
+    paddingVertical: 10,
   },
   cupomtext: { color: "#fff", fontWeight: "bold" },
   logoutButton: {
     flexDirection: "row",
     backgroundColor: "#a12a3a",
     padding: 12,
-    borderRadius: 8,
+    borderRadius: 18,
     justifyContent: "center",
     alignItems: "center",
+    paddingVertical: 10,
   },
   logoutButtonText: { color: "#fff", marginLeft: 5, fontWeight: "bold" },
   modalOverlay: {

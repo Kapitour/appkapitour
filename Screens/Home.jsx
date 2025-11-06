@@ -181,7 +181,7 @@ export default function Home() {
                   onPress={() => navigation.navigate('Clima')}
                 >
                   <View style={styles.bubbleHeader}>
-                    <Ionicons name="sunny-outline" size={24} color="#fff" />
+                    <Ionicons name="sunny-outline" size={14} color="#fff" />
                     <Text style={styles.bubbleTitle}>Clima em Maricá</Text>
                   </View>
                   <Text style={styles.bubbleText}>Clique aqui para consultar a previsão do tempo e dicas para seu passeio!</Text>

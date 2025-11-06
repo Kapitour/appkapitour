@@ -218,7 +218,7 @@ const MostCaroussel = ({ onRotaPress }) => {
 
   return (
     <View>
-      <Text style={styles.texto}>Top 10 Guias mais bem avaliados:</Text>
+      
       <ScrollView horizontal={true} showsHorizontalScrollIndicator={false}>
         {rotas.map((rota, index) => (
           <TouchableOpacity
