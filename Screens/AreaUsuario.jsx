@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   Modal,
   TextInput,
   Image,
+  Animated,
 } from "react-native";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { MaterialCommunityIcons, Ionicons } from "@expo/vector-icons";
@@ -58,6 +59,15 @@ const AreaUsuario = () => {
   const [selectedPonto, setSelectedPonto] = useState(null);
     const [showDetailModal, setShowDetailModal] = useState(false);
 
+  // Animações
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
+  const scaleAnim = useRef(new Animated.Value(0.95)).current;
+  
+  // Estado para expandir/colapsar card de informações
+  const [cardExpanded, setCardExpanded] = useState(false);
+  const expandAnim = useRef(new Animated.Value(0)).current;
+
   // Carregar info do usuário
   useEffect(() => {
     if (!user?.id) {
@@ -98,6 +108,41 @@ const AreaUsuario = () => {
 
     fetchUserInfo();
   }, [user]);
+
+  // Animação de entrada do card
+  useEffect(() => {
+    if (userInfo && !loading) {
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.spring(slideAnim, {
+          toValue: 0,
+          friction: 8,
+          tension: 40,
+          useNativeDriver: true,
+        }),
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          friction: 6,
+          tension: 40,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [userInfo, loading]);
+
+  // Animação de expansão/colapso
+  useEffect(() => {
+    Animated.spring(expandAnim, {
+      toValue: cardExpanded ? 1 : 0,
+      friction: 8,
+      tension: 40,
+      useNativeDriver: false,
+    }).start();
+  }, [cardExpanded]);
 
   const fetchCuponsOuHistorico = async () => {
     if (!userInfo) return;
@@ -404,92 +449,278 @@ const AreaUsuario = () => {
         <Text style={styles.headerTitle}>Área do Usuário</Text>
 
         <View style={styles.content}>
-          <View style={styles.card}>
-            <InfoRow icon="account-circle-outline" label="Nome" value={nome} />
-            <InfoRow icon="email-outline" label="Email" value={email} />
-            <InfoRow
-              icon="card-account-details-outline"
-              label="CPF"
-              value={cpf}
-            />
-
+          <Animated.View
+            style={[
+              styles.card,
+              {
+                opacity: fadeAnim,
+                transform: [
+                  { translateY: slideAnim },
+                  { scale: scaleAnim }
+                ],
+              },
+            ]}
+          >
+            {/* Header do Card com Gradiente */}
             <TouchableOpacity
-              style={styles.editButton}
-              onPress={() => setShowEditModal(true)}
+              activeOpacity={0.9}
+              onPress={() => setCardExpanded(!cardExpanded)}
             >
-              <MaterialCommunityIcons name="pencil" size={20} color="#333" />
-              <Text style={styles.buttonText}>Editar</Text>
+              <LinearGradient
+                colors={["#c83349", "#a12a3a"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.cardHeader}
+              >
+                <View style={styles.cardHeaderContent}>
+                  <View style={styles.avatarContainer}>
+                    <MaterialCommunityIcons
+                      name="account-circle"
+                      size={cardExpanded ? 50 : 60}
+                      color="#fff"
+                    />
+                  </View>
+                  <View style={styles.userInfoHeader}>
+                    <Text style={styles.userName}>{nome || "Usuário"}</Text>
+                    <Text style={styles.userType}>
+                      {getTipoUsuarioText(tipoUsuarioId)}
+                    </Text>
+                  </View>
+                  <Animated.View
+                    style={{
+                      transform: [
+                        {
+                          rotate: expandAnim.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: ["0deg", "180deg"],
+                          }),
+                        },
+                      ],
+                    }}
+                  >
+                    <MaterialCommunityIcons
+                      name="chevron-down"
+                      size={24}
+                      color="#fff"
+                      style={{ opacity: 0.9 }}
+                    />
+                  </Animated.View>
+                </View>
+              </LinearGradient>
             </TouchableOpacity>
-          </View>
+
+            {/* Conteúdo do Card - Expansível */}
+            <Animated.View
+              style={{
+                maxHeight: expandAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, 250],
+                }),
+                opacity: expandAnim.interpolate({
+                  inputRange: [0, 0.5, 1],
+                  outputRange: [0, 0.5, 1],
+                }),
+                overflow: "hidden",
+              }}
+            >
+              <View style={styles.cardBody}>
+                <View style={styles.infoSection}>
+                  <InfoRow 
+                    icon="email-outline" 
+                    label="Email" 
+                    value={email}
+                    iconColor="#c83349"
+                  />
+                  <View style={styles.divider} />
+                  <InfoRow
+                    icon="card-account-details-outline"
+                    label="CPF"
+                    value={cpf}
+                    iconColor="#c83349"
+                  />
+                </View>
+
+                <TouchableOpacity
+                  style={styles.editButton}
+                  onPress={() => setShowEditModal(true)}
+                  activeOpacity={0.8}
+                >
+                  <LinearGradient
+                    colors={["#c83349", "#a12a3a"]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.editButtonGradient}
+                  >
+                    <MaterialCommunityIcons name="pencil" size={20} color="#fff" />
+                    <Text style={styles.editButtonText}>Editar</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
+            </Animated.View>
+          </Animated.View>
 
           {tipoUsuarioId === 1 || tipoUsuarioId === 3 ? (
-            <View style={styles.qrCodeContainer}>
-              <Text style={styles.qrCodeTitle}>Seu QR Code</Text>
-              <Text style={styles.qrCodeSubtitle}>
-                Apresente para parceiros
-              </Text>
-              <TouchableOpacity
-                style={styles.qrCodeButton}
-                onPress={() => setShowQRCode(true)}
+            <Animated.View
+              style={[
+                styles.qrCodeContainer,
+                {
+                  opacity: fadeAnim,
+                  transform: [{ translateY: slideAnim }],
+                },
+              ]}
+            >
+              <LinearGradient
+                colors={["rgba(255,255,255,0.15)", "rgba(255,255,255,0.05)"]}
+                style={styles.qrCodeCard}
               >
-                <MaterialCommunityIcons
-                  name="qrcode-scan"
-                  size={24}
-                  color="#fff"
-                />
-                <Text style={styles.qrCodeButtonText}>Ver QR Code</Text>
-              </TouchableOpacity>
-            </View>
+                <View style={styles.qrCodeIconWrapper}>
+                  <MaterialCommunityIcons
+                    name="qrcode-scan"
+                    size={40}
+                    color="#fff"
+                  />
+                </View>
+                <Text style={styles.qrCodeTitle}>Seu QR Code</Text>
+                <Text style={styles.qrCodeSubtitle}>
+                  Apresente para parceiros
+                </Text>
+                <TouchableOpacity
+                  style={styles.qrCodeButton}
+                  onPress={() => setShowQRCode(true)}
+                  activeOpacity={0.8}
+                >
+                  <MaterialCommunityIcons
+                    name="qrcode-scan"
+                    size={24}
+                    color="#fff"
+                  />
+                  <Text style={styles.qrCodeButtonText}>Ver QR Code</Text>
+                </TouchableOpacity>
+              </LinearGradient>
+            </Animated.View>
           ) : null}
 
           {tipoUsuarioId === 2 && (
-            <View style={styles.leitorContainer}>
-              <Text style={styles.leitorTitle}>Leitor de QR Code</Text>
-              <Text style={styles.leitorSubtitle}>
-                Escaneie QR Codes dos usuários
-              </Text>
+            <Animated.View
+              style={[
+                styles.leitorContainer,
+                {
+                  opacity: fadeAnim,
+                  transform: [{ translateY: slideAnim }],
+                },
+              ]}
+            >
+              <LinearGradient
+                colors={["rgba(255,255,255,0.15)", "rgba(255,255,255,0.05)"]}
+                style={styles.leitorCard}
+              >
+                <View style={styles.leitorIconWrapper}>
+                  <MaterialCommunityIcons
+                    name="qrcode-scan"
+                    size={40}
+                    color="#fff"
+                  />
+                </View>
+                <Text style={styles.leitorTitle}>Leitor de QR Code</Text>
+                <Text style={styles.leitorSubtitle}>
+                  Escaneie QR Codes dos usuários
+                </Text>
+                <TouchableOpacity
+                  style={styles.leitorButton}
+                  onPress={() => navigation.navigate("LeitorQR")}
+                  activeOpacity={0.8}
+                >
+                  <MaterialCommunityIcons
+                    name="qrcode-scan"
+                    size={24}
+                    color="#fff"
+                  />
+                  <Text style={styles.leitorButtonText}>Abrir Leitor</Text>
+                </TouchableOpacity>
+              </LinearGradient>
+            </Animated.View>
+          )}
+
+          <View style={styles.actionsContainer}>
+            {tipoUsuarioId === 2 ? (
               <TouchableOpacity
-                style={styles.leitorButton}
-                onPress={() => navigation.navigate("LeitorQR")}
+                style={styles.cupom}
+                onPress={() => setShowCampanhas(true)}
+                activeOpacity={0.8}
+              >
+                <LinearGradient
+                  colors={["#c83349", "#a12a3a"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.cupomGradient}
+                >
+                  <MaterialCommunityIcons
+                    name="ticket-percent"
+                    size={24}
+                    color="#fff"
+                  />
+                  <Text style={styles.cupomtext}>Minhas Campanhas</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={styles.cupom}
+                onPress={() => setShowCupons(true)}
+                activeOpacity={0.8}
+              >
+                <LinearGradient
+                  colors={["#c83349", "#a12a3a"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.cupomGradient}
+                >
+                  <MaterialCommunityIcons
+                    name="ticket-percent"
+                    size={24}
+                    color="#fff"
+                  />
+                  <Text style={styles.cupomtext}>Meus Cupons</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            )}
+
+            {/* Acesso a Contato dentro da Área do Usuário */}
+            <TouchableOpacity
+              style={styles.cupom}
+              onPress={() => navigation.navigate("Contato")}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={["#c83349", "#a12a3a"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.cupomGradient}
               >
                 <MaterialCommunityIcons
-                  name="qrcode-scan"
+                  name="headset"
                   size={24}
                   color="#fff"
                 />
-                <Text style={styles.leitorButtonText}>Abrir Leitor</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {tipoUsuarioId === 2 ? (
-            <TouchableOpacity
-              style={styles.cupom}
-              onPress={() => setShowCampanhas(true)}
-            >
-              <Text style={styles.cupomtext}>Minhas Campanhas</Text>
+                <Text style={styles.cupomtext}>Contato e Suporte</Text>
+              </LinearGradient>
             </TouchableOpacity>
-          ) : (
+
             <TouchableOpacity
-              style={styles.cupom}
-              onPress={() => setShowCupons(true)}
+              style={styles.logoutButton}
+              onPress={handleLogout}
+              activeOpacity={0.8}
             >
-              <Text style={styles.cupomtext}>Meus Cupons</Text>
+              <LinearGradient
+                colors={["#a12a3a", "#8a1f2d"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.logoutButtonGradient}
+              >
+                <MaterialCommunityIcons name="logout" size={20} color="#fff" />
+                <Text style={styles.logoutButtonText}>Sair</Text>
+              </LinearGradient>
             </TouchableOpacity>
-          )}
-
-          {/* Acesso a Contato dentro da Área do Usuário */}
-          <TouchableOpacity
-            style={styles.cupom}
-            onPress={() => navigation.navigate("Contato")}
-          >
-            <Text style={styles.cupomtext}>Contato e Suporte</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <MaterialCommunityIcons name="logout" size={20} color="#fff" />
-            <Text style={styles.logoutButtonText}>Sair</Text>
-          </TouchableOpacity>
+          </View>
         </View>
 
         {/* Seção de Rotas Favoritas */}
@@ -611,17 +842,20 @@ const AreaUsuario = () => {
     </LinearGradient>
   );
 
-  function InfoRow({ icon, label, value }) {
+  function InfoRow({ icon, label, value, iconColor = "#c83349" }) {
     return (
       <View style={styles.infoRow}>
-        <MaterialCommunityIcons
-          name={icon}
-          size={24}
-          color="#333"
-          style={styles.icon}
-        />
-        <Text style={styles.infoLabel}>{label}:</Text>
-        <Text style={styles.infoValue}>{value || "Não informado"}</Text>
+        <View style={[styles.iconContainer, { backgroundColor: "rgba(200, 51, 73, 0.15)" }]}>
+          <MaterialCommunityIcons
+            name={icon}
+            size={22}
+            color={iconColor}
+          />
+        </View>
+        <View style={styles.infoTextContainer}>
+          <Text style={styles.infoLabel}>{label}</Text>
+          <Text style={styles.infoValue}>{value || "Não informado"}</Text>
+        </View>
       </View>
     );
   }
@@ -861,57 +1095,257 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20 },
   card: {
     backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 15,
+    borderRadius: 24,
+    marginBottom: 24,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  cardHeader: {
+    padding: 20,
+    paddingVertical: 18,
+  },
+  cardHeaderContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  avatarContainer: {
+    marginRight: 16,
+  },
+  userInfoHeader: {
+    flex: 1,
+  },
+  userName: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#fff",
+    marginBottom: 4,
+  },
+  userType: {
+    fontSize: 14,
+    color: "rgba(255,255,255,0.9)",
+    fontWeight: "500",
+  },
+  cardBody: {
+    padding: 20,
+  },
+  infoSection: {
     marginBottom: 20,
   },
-  infoRow: { flexDirection: "row", alignItems: "center", marginBottom: 10 },
-  icon: { marginRight: 10 },
-  infoLabel: { fontWeight: "bold", marginRight: 5 },
-  infoValue: { flex: 1 },
-  editButton: { flexDirection: "row", alignItems: "center", marginTop: 10 },
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+    paddingVertical: 4,
+  },
+  iconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  infoTextContainer: {
+    flex: 1,
+  },
+  infoLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#666",
+    marginBottom: 2,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  infoValue: {
+    fontSize: 16,
+    color: "#333",
+    fontWeight: "500",
+  },
+  divider: {
+    height: 1,
+    backgroundColor: "#f0f0f0",
+    marginVertical: 8,
+    marginLeft: 56,
+  },
+  editButton: {
+    borderRadius: 16,
+    overflow: "hidden",
+    marginTop: 8,
+  },
+  editButtonGradient: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+  },
+  editButtonText: {
+    marginLeft: 8,
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
   buttonText: { marginLeft: 5, color: "#333", fontWeight: "bold" },
-  qrCodeContainer: { marginBottom: 20, alignItems: "center" },
-  qrCodeTitle: { color: "#fff", fontWeight: "bold", fontSize: 16 },
-  qrCodeSubtitle: { color: "#fff", fontSize: 12, marginBottom: 10 },
+  actionsContainer: {
+    marginBottom: 20,
+  },
+  qrCodeContainer: {
+    marginBottom: 20,
+    alignItems: "center",
+  },
+  qrCodeCard: {
+    borderRadius: 20,
+    padding: 24,
+    alignItems: "center",
+    width: "100%",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
+    backdropFilter: "blur(10px)",
+  },
+  qrCodeIconWrapper: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  qrCodeTitle: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 20,
+    marginBottom: 8,
+  },
+  qrCodeSubtitle: {
+    color: "rgba(255,255,255,0.9)",
+    fontSize: 14,
+    marginBottom: 20,
+    textAlign: "center",
+  },
   qrCodeButton: {
     flexDirection: "row",
     backgroundColor: "#c83349",
-    padding: 10,
-    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  qrCodeButtonText: {
+    color: "#fff",
+    marginLeft: 8,
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  leitorContainer: {
+    marginBottom: 20,
     alignItems: "center",
   },
-  qrCodeButtonText: { color: "#fff", marginLeft: 5 },
-  leitorContainer: { marginBottom: 20, alignItems: "center" },
-  leitorTitle: { color: "#fff", fontWeight: "bold", fontSize: 16 },
-  leitorSubtitle: { color: "#fff", fontSize: 12, marginBottom: 10 },
+  leitorCard: {
+    borderRadius: 20,
+    padding: 24,
+    alignItems: "center",
+    width: "100%",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
+    backdropFilter: "blur(10px)",
+  },
+  leitorIconWrapper: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  leitorTitle: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 20,
+    marginBottom: 8,
+  },
+  leitorSubtitle: {
+    color: "rgba(255,255,255,0.9)",
+    fontSize: 14,
+    marginBottom: 20,
+    textAlign: "center",
+  },
   leitorButton: {
     flexDirection: "row",
     backgroundColor: "#c83349",
-    padding: 10,
-    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 12,
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
-  leitorButtonText: { color: "#fff", marginLeft: 5 },
+  leitorButtonText: {
+    color: "#fff",
+    marginLeft: 8,
+    fontWeight: "bold",
+    fontSize: 16,
+  },
   cupom: {
-    backgroundColor: "#c83349",
-    
-    borderRadius: 18,
-    alignItems: "center",
-    marginBottom: 15,
-    paddingVertical: 10,
+    borderRadius: 16,
+    overflow: "hidden",
+    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  cupomtext: { color: "#fff", fontWeight: "bold" },
-  logoutButton: {
+  cupomGradient: {
     flexDirection: "row",
-    backgroundColor: "#a12a3a",
-    padding: 12,
-    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+  },
+  cupomtext: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  logoutButton: {
+    borderRadius: 16,
+    overflow: "hidden",
+    marginTop: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+    width: "100%",
+  },
+  logoutButtonGradient: {
+    flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: 10,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
   },
-  logoutButtonText: { color: "#fff", marginLeft: 5, fontWeight: "bold" },
+  logoutButtonText: {
+    color: "#fff",
+    marginLeft: 5,
+    fontWeight: "bold",
+    fontSize: 16,
+  },
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.6)",
@@ -973,7 +1407,17 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#fff",
     marginBottom: 15,
+    width: "58%", // A largura do componente será 50%
+    textAlign: "left", // Alinha o texto à esquerda
+    backgroundColor: "aqua-marine",
+    borderRadius: 10,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: "#fff",
+    marginLeft: 10, // Sem margem à esquerda
+    marginRight: "auto", // Empurra para a esquerda
   },
+  
   emptyText: {
     color: "#fff",
     textAlign: "center",
