@@ -7,6 +7,12 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { StyleSheet, View, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+
+// Clerk
+import { ClerkProvider, SignedIn, SignedOut } from "@clerk/clerk-expo";
+import * as SecureStore from "expo-secure-store";
+
+// Auth Context (Supabase)
 import { useAuth } from "./hooks/useAuth";
 
 // Telas
@@ -19,13 +25,21 @@ import Mapa from "./Screens/Mapa";
 import Cadastro from "./Screens/Cadastro";
 import AreaUsuario from "./Screens/AreaUsuario";
 import LeitorQR from "./Screens/LeitorQR";
-// ✅ 1. Import da tela de clima no lugar certo (junto com as outras)
-import WeatherScreen from "./Screens/WeatherScreen"; 
+import WeatherScreen from "./Screens/WeatherScreen";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
-// Stack de autenticação (apenas para usuários não logados)
+// SUA PUBLIC KEY CLERK
+const CLERK_KEY = "pk_test_bGl2aW5nLWJlYWdsZS01MS5jbGVyay5hY2NvdW50cy5kZXYk";
+
+// Cache Clerk
+const tokenCache = {
+  getToken: (key) => SecureStore.getItemAsync(key),
+  saveToken: (key, value) => SecureStore.setItemAsync(key, value),
+};
+
+// Telas para não logados
 function AuthStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -35,23 +49,8 @@ function AuthStack() {
   );
 }
 
-// Stack principal com todas as telas
-function MainStack() {
-  return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="MainTabs" component={MainTabs} />
-      <Stack.Screen name="LeitorQR" component={LeitorQR} />
-      <Stack.Screen name="Contato" component={Contato} />
-      {/* ✅ 2. Tela de clima registrada dentro do navegador principal */}
-      <Stack.Screen name="Clima" component={WeatherScreen} /> 
-    </Stack.Navigator>
-  );
-}
-
 // Tabs principais
 function MainTabs() {
-  const { user } = useAuth();
-
   return (
     <Tab.Navigator
       screenOptions={{
@@ -75,15 +74,18 @@ function MainTabs() {
           ),
         }}
       />
+
+      {/* SE LOGADO → AreaUsuario / SE DESLOGADO → Login */}
       <Tab.Screen
         name="Conta"
-        component={user ? AreaUsuario : AuthStack}
+        component={AccountEntry}
         options={{
           tabBarIcon: ({ color }) => (
             <Ionicons name="person-outline" color={color} size={28} />
           ),
         }}
       />
+
       <Tab.Screen
         name="Rotas"
         component={Rotas}
@@ -93,6 +95,7 @@ function MainTabs() {
           ),
         }}
       />
+
       <Tab.Screen
         name="Loja"
         component={Loja}
@@ -102,6 +105,7 @@ function MainTabs() {
           ),
         }}
       />
+
       <Tab.Screen
         name="Mapa"
         component={Mapa}
@@ -115,11 +119,37 @@ function MainTabs() {
   );
 }
 
-// Componente de navegação principal
-function NavigationContent() {
-  const { user, loading } = useAuth();
+// Lida com a aba "Conta"
+function AccountEntry() {
+  return (
+    <>
+      <SignedIn>
+        <AreaUsuario />
+      </SignedIn>
 
-  // Tela de loading enquanto verifica autenticação
+      <SignedOut>
+        <AuthStack />
+      </SignedOut>
+    </>
+  );
+}
+
+// Stack Principal
+function MainStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="MainTabs" component={MainTabs} />
+      <Stack.Screen name="LeitorQR" component={LeitorQR} />
+      <Stack.Screen name="Contato" component={Contato} />
+      <Stack.Screen name="Clima" component={WeatherScreen} />
+    </Stack.Navigator>
+  );
+}
+
+// 🔥 TELA DE NAVEGAÇÃO CORRIGIDA (SUPABASE + CLERK)
+function NavigationContent() {
+  const { user, loading } = useAuth(); // pega usuário do SUPABASE
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -128,17 +158,13 @@ function NavigationContent() {
     );
   }
 
-  return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      {user ? (
-        // Usuário logado - mostrar stack principal com tabs
-        <Stack.Screen name="Main" component={MainStack} />
-      ) : (
-        // Usuário não logado - mostrar stack de autenticação
-        <Stack.Screen name="Auth" component={AuthStack} />
-      )}
-    </Stack.Navigator>
-  );
+  // 🔥 se não está logado no Supabase → Login
+  if (!user) {
+    return <AuthStack />;
+  }
+
+  // 🔥 se está logado → Tabs/Home
+  return <MainStack />;
 }
 
 export default function App() {
@@ -155,13 +181,20 @@ export default function App() {
   }, []);
 
   return (
-    <NavigationContainer>
-      <StatusBar hidden />
-      <NavigationContent />
-    </NavigationContainer>
+    <ClerkProvider
+      publishableKey={CLERK_KEY}
+      tokenCache={tokenCache}
+      redirectUrl="kapitest://callback"
+    >
+      <NavigationContainer>
+        <StatusBar hidden />
+        <NavigationContent />
+      </NavigationContainer>
+    </ClerkProvider>
   );
 }
 
+// ESTILOS CORRIGIDOS
 const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1,
@@ -178,8 +211,8 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    overflow: "hidden", 
-    elevation: 5, 
+    overflow: "hidden",
+    elevation: 5,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: -3 },
     shadowOpacity: 0.1,
