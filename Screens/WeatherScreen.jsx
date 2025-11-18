@@ -8,7 +8,8 @@ import {
   SafeAreaView,
   TouchableOpacity,
   StatusBar,
-  ScrollView
+  ScrollView,
+  Dimensions
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { gradients } from "../theme/gradients";
@@ -203,6 +204,13 @@ const getWeatherTitle = (tempCategory, weatherCondition, isWindy) => {
   return title;
 };
 
+const getAccentColor = (weatherCondition, tempCategory) => {
+  if (weatherCondition === "ensolarado") return "#f7a000";
+  if (weatherCondition === "nublado") return "#8bb0ff";
+  if (weatherCondition === "chuvoso") return "#3da5d9";
+  return tempCategory === "calor" ? "#f7a000" : tempCategory === "frio" ? "#a1c4fd" : "#e65a6d";
+};
+
 
 
 export default function WeatherScreen({ navigation }) { 
@@ -213,6 +221,9 @@ export default function WeatherScreen({ navigation }) {
   const [capybaraInfo, setCapybaraInfo] = useState(null);
   // Estado para controlar a exibição de detalhes do clima
   const [showWeatherDetails, setShowWeatherDetails] = useState(false);
+  const MAX_W = Math.min(Dimensions.get("window").width * 0.92, 380);
+  const SCREEN_W = Dimensions.get("window").width;
+  const IMG_H = Math.min(Math.max(SCREEN_W * 0.9, 260), 440);
 
   useEffect(() => {
     const fetchWeather = async () => {
@@ -242,27 +253,23 @@ export default function WeatherScreen({ navigation }) {
     }
 
     if (weather && capybaraInfo) {
+      const accent = getAccentColor(capybaraInfo.weatherCondition, capybaraInfo.tempCategory);
       return (
         <>
           {/* Card da Capivara com Balão de Fala */}
-          <View style={styles.capybaraCard}>
-            {/* Balão de fala clicável */}
-            <TouchableOpacity 
-              style={styles.speechBubble}
-              onPress={() => setShowWeatherDetails(!showWeatherDetails)}
-            >
-              <View style={styles.bubbleHeader}>
-                <Ionicons name={capybaraInfo.icon} size={24} color="#fff" />
-                <Text style={styles.bubbleTitle}>{capybaraInfo.title}</Text>
-              </View>
-              <Text style={styles.bubbleText}>{capybaraInfo.capybaraSuggestion}</Text>
+          <View style={[styles.capybaraCard, { width: MAX_W, alignSelf: 'center', borderColor: accent }] }>
+            <Ionicons name={capybaraInfo.icon} size={160} color={accent} style={styles.illustrationBg} />
+            <TouchableOpacity onPress={() => setShowWeatherDetails(!showWeatherDetails)}>
+              <Text style={styles.suggestionText}>{capybaraInfo.capybaraSuggestion}</Text>
             </TouchableOpacity>
-            
-            {/* Imagem da capivara agora no lado direito */}
+            <View style={styles.tempRow}>
+              <Ionicons name="thermometer-outline" size={22} color={accent} />
+              <Text style={styles.tempInline}>{Math.round(weather.main.temp)}°C</Text>
+            </View>
             <Image
               source={{ uri: capybaraInfo.capybaraImage }}
-              style={styles.capybaraImage}
-              // Fallback para uma imagem padrão caso a URL não funcione
+              style={[styles.capybaraImage, { height: IMG_H }]}
+              resizeMode="contain"
               onError={(e) => {
                 e.target.onerror = null;
                 e.target.src = "https://via.placeholder.com/200x200?text=Capivara";
@@ -272,7 +279,7 @@ export default function WeatherScreen({ navigation }) {
           
           {/* Detalhes do clima (mostrados apenas quando clicado no balão) */}
           {showWeatherDetails && (
-            <View style={styles.resultCard}>
+            <View style={[styles.resultCard, { width: MAX_W, alignSelf: 'center', borderColor: accent }] }>
               <Image
                 source={{ uri: `https://openweathermap.org/img/wn/${weather.weather[0].icon}@4x.png` }}
                 style={styles.weatherIcon}
@@ -282,11 +289,11 @@ export default function WeatherScreen({ navigation }) {
               <View style={styles.divider} />
               <View style={styles.detailsContainer}>
                 <View style={styles.detailItem}>
-                  <Ionicons name="water-outline" size={24} color="#fff" />
+                  <Ionicons name="water-outline" size={24} color={accent} />
                   <Text style={styles.details}>Umidade: {weather.main.humidity}%</Text>
                 </View>
                 <View style={styles.detailItem}>
-                  <Ionicons name="leaf-outline" size={24} color="#fff" />
+                  <Ionicons name="leaf-outline" size={24} color={accent} />
                   <Text style={styles.details}>Vento: {Math.round(weather.wind.speed * 3.6)} km/h</Text>
                 </View>
               </View>
@@ -311,8 +318,13 @@ export default function WeatherScreen({ navigation }) {
         </TouchableOpacity>
 
         <View style={styles.container}>
-          <Text style={styles.title}>Clima Atual em</Text>
-          <Text style={styles.cityTitle}>Maricá</Text>
+          <View style={styles.headerPlain}>
+            <Ionicons name="partly-sunny-outline" size={26} color="#fff" />
+            <View style={{ marginLeft: 8 }}>
+              <Text style={styles.title}>Clima Atual em</Text>
+              <Text style={styles.cityTitle}>Maricá</Text>
+            </View>
+          </View>
           {renderContent()}
         </View>
 
@@ -337,16 +349,24 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   title: { 
-    fontSize: 22, 
-    fontWeight: "300",
-    color: "rgba(255, 255, 255, 0.8)",
+    fontSize: 26, 
+    fontWeight: "400",
+    color: "rgba(255, 255, 255, 0.9)",
     marginTop: 50,
   },
   cityTitle: {
-    fontSize: 34,
-    fontWeight: "bold",
+    fontSize: 42,
+    fontWeight: "700",
     color: "#fff",
-    marginBottom: 20, // Reduzi um pouco a margem
+    marginBottom: 0,
+  },
+  headerPlain: {
+    padding: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 40,
+    marginBottom: 20,
+    width: "92%",
   },
   feedbackView: {
     flex: 1,
@@ -408,7 +428,7 @@ const styles = StyleSheet.create({
   // ✅ Estilos para o Card da Capivara
   capybaraCard: {
     width: '100%',
-    flexDirection: 'row',
+    flexDirection: 'column',
     alignItems: 'center',
     marginBottom: 10,
     backgroundColor: 'rgba(0, 0, 0, 0.2)',
@@ -418,12 +438,37 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   capybaraImage: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    marginLeft: 15,
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
+    width: '100%',
+    height: 440,
+    borderRadius: 0,
+    borderWidth: 0,
+    marginTop: 6,
+  },
+  illustrationBg: {
+    position: 'absolute',
+    right: 8,
+    top: 8,
+    opacity: 0.15,
+  },
+  suggestionText: {
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontSize: 14,
+    lineHeight: 20,
+    marginTop: 10,
+    textAlign: 'center',
+  },
+  tempRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 6,
+    marginBottom: 6,
+  },
+  tempInline: {
+    fontSize: 56,
+    fontWeight: '300',
+    color: '#fff',
+    marginLeft: 6,
   },
   // ✅ Estilos para o Balão de Fala
   speechBubble: {
