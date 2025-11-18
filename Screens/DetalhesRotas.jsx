@@ -15,8 +15,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../lib/supabase";
 import { LinearGradient } from "expo-linear-gradient";
-import Checkbox from "expo-checkbox";
-import { salvarProgressoRota, carregarProgressoRota, limparProgressoRota } from "../utils/progressManager";
+import { salvarProgressoRota, carregarProgressoRota } from "../utils/progressManager";
 
 export default function DetalhesRota({ rota, voltar }) {
   const [pontos, setPontos] = useState([]);
@@ -81,26 +80,7 @@ export default function DetalhesRota({ rota, voltar }) {
     fetchPontosDaRota();
   }, [rota.id]);
 
-  const toggleCheckbox = async (index) => {
-    const updated = [...pontos];
-    updated[index].completed = !updated[index].completed;
-    setPontos(updated);
-    
-    // Salvar progresso automaticamente quando uma checkbox é alterada
-    await salvarProgressoRota(rota.id, updated);
-  };
-
-  const resetarProgresso = async () => {
-    const pontosResetados = pontos.map(p => ({ ...p, completed: false, rating: null }));
-    setPontos(pontosResetados);
-    await salvarProgressoRota(rota.id, pontosResetados);
-  };
-
-  const limparProgresso = async () => {
-    await limparProgressoRota(rota.id);
-    const pontosResetados = pontos.map(p => ({ ...p, completed: false, rating: null }));
-    setPontos(pontosResetados);
-  };
+  
 
   const progresso = pontos.length
     ? (pontos.filter((p) => p.completed).length / pontos.length) * 100
@@ -419,97 +399,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "bold",
   },
-  resetButton: {
-    backgroundColor: "#c3073f",
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    alignItems: "center",
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.22,
-    shadowRadius: 2.22,
-    marginTop: 10,
-  },
-  resetText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 16,
-  },
   buttonInline: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
   },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
-    marginTop: 10,
-  },
-  clearButton: {
-    backgroundColor: '#c3073f',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    alignItems: 'center',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.22,
-    shadowRadius: 2.22,
-  },
-  clearText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
 
   // Cards dos pontos seguindo o padrão do Rotas.jsx
-  pontoCard: {
-    backgroundColor: "#c3073f",
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 15,
-    width: "100%",
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-  },
-  pontoImage: {
-    width: "100%",
-    height: 160,
-    borderRadius: 12,
-    marginBottom: 12,
-    backgroundColor: "#222",
-  },
-  checkboxContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 10,
-    fontSize: 25
-  },
-  pontoNome: { 
-    fontSize: 18, 
-    color: "#fff", 
-    marginLeft: 12,
-    fontWeight: "bold",
-    flex: 1,
-  },
-  completed: { 
-    textDecorationLine: "line-through", 
-    color: "#ccc",
-    opacity: 0.7,
-  },
-  pontoDesc: { 
-    color: "#eee", 
-    marginBottom: 15,
-    fontSize: 14,
-    lineHeight: 20,
-  },
   gpsButton: {
     backgroundColor: "#f7a000",
     paddingVertical: 12,
@@ -540,12 +436,6 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "bold",
     fontSize: 16,
-  },
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.7)",
-    justifyContent: "center",
-    padding: 20,
   },
   fullCard: {
     backgroundColor: "#1a1a2e",
@@ -598,18 +488,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: 12,
     alignItems: "center",
-  },
-  prevButton: {
-    backgroundColor: "#2c2338",
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  prevText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 16,
   },
   nextButton: {
     backgroundColor: "#c3073f",
