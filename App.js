@@ -1,11 +1,14 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState, useRef, useContext } from "react";
 import * as NavigationBar from "expo-navigation-bar";
 import * as SystemUI from "expo-system-ui";
 import { StatusBar } from "expo-status-bar";
-import { NavigationContainer } from "@react-navigation/native";
+import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { StyleSheet, View, ActivityIndicator } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { supabase } from "./lib/supabase";
+import Animated, { FadeIn, SlideInLeft, SlideInRight, Easing } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "./hooks/useAuth";
 
@@ -25,10 +28,46 @@ import WeatherScreen from "./Screens/WeatherScreen";
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
+const TabTransitionContext = React.createContext({ direction: 0, animate: false });
+
+const AppTheme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    background: "#0f142c",
+    card: "#0f142c",
+  },
+};
+
+function withTabTransition(Component) {
+  return function Wrapped(props) {
+    const { direction, animate } = useContext(TabTransitionContext);
+
+    if (!animate) {
+      return (
+        <View style={{ flex: 1 }}>
+          <Component {...props} />
+        </View>
+      );
+    }
+
+    return (
+      <Animated.View
+        style={{ flex: 1 }}
+        entering={(direction >= 0 ? SlideInRight : SlideInLeft)
+          .duration(200)
+          .easing(Easing.out(Easing.cubic))}
+      >
+        <Component {...props} />
+      </Animated.View>
+    );
+  };
+}
+
 // Stack de autenticação (apenas para usuários não logados)
 function AuthStack() {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator screenOptions={{ headerShown: false, animation: "slide_from_right" }} sceneContainerStyle={{ backgroundColor: "#0f142c" }}>
       <Stack.Screen name="Login" component={Login} />
       <Stack.Screen name="Cadastro" component={Cadastro} />
     </Stack.Navigator>
@@ -38,7 +77,7 @@ function AuthStack() {
 // Stack principal com todas as telas
 function MainStack() {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator screenOptions={{ headerShown: false, animation: "slide_from_right" }} sceneContainerStyle={{ backgroundColor: "#0f142c" }}>
       <Stack.Screen name="MainTabs" component={MainTabs} />
       <Stack.Screen name="LeitorQR" component={LeitorQR} />
       <Stack.Screen name="Contato" component={Contato} />
@@ -51,67 +90,94 @@ function MainStack() {
 // Tabs principais
 function MainTabs() {
   const { user } = useAuth();
+  const [direction, setDirection] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [animateTabs, setAnimateTabs] = useState(false);
+  const handleTabPress = (nextIndex) => {
+    setDirection(nextIndex > currentIndex ? 1 : -1);
+    setCurrentIndex(nextIndex);
+    setAnimateTabs(true);
+  };
 
   return (
-    <Tab.Navigator
-      screenOptions={{
-        headerShown: false,
-        tabBarShowLabel: true,
-        tabBarActiveTintColor: "#c83349",
-        tabBarInactiveTintColor: "#bbbbbb",
-        tabBarLabelStyle: {
-          fontSize: 12,
-          marginBottom: 5,
-        },
-        tabBarStyle: styles.tabBar,
-      }}
-    >
-      <Tab.Screen
-        name="Início"
-        component={Home}
-        options={{
-          tabBarIcon: ({ color }) => (
-            <Ionicons name="home-outline" color={color} size={28} />
-          ),
+    <TabTransitionContext.Provider value={{ direction, animate: animateTabs }}>
+      <Tab.Navigator
+        detachInactiveScreens={false}
+        screenOptions={{
+          headerShown: false,
+          tabBarShowLabel: true,
+          tabBarActiveTintColor: "#c83349",
+          tabBarInactiveTintColor: "#bbbbbb",
+          tabBarLabelStyle: {
+            fontSize: 12,
+            marginBottom: 5,
+          },
+          tabBarStyle: styles.tabBar,
+          sceneContainerStyle: { backgroundColor: "#0f142c" },
         }}
-      />
-      <Tab.Screen
-        name="Conta"
-        component={user ? AreaUsuario : AuthStack}
-        options={{
-          tabBarIcon: ({ color }) => (
-            <Ionicons name="person-outline" color={color} size={28} />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="Rotas"
-        component={Rotas}
-        options={{
-          tabBarIcon: ({ color }) => (
-            <Ionicons name="navigate-outline" color={color} size={28} />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="Loja"
-        component={Loja}
-        options={{
-          tabBarIcon: ({ color }) => (
-            <Ionicons name="cart-outline" color={color} size={28} />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="Mapa"
-        component={Mapa}
-        options={{
-          tabBarIcon: ({ color }) => (
-            <Ionicons name="map-outline" color={color} size={28} />
-          ),
-        }}
-      />
-    </Tab.Navigator>
+      >
+        <Tab.Screen
+          name="Início"
+          component={withTabTransition(Home)}
+          options={{
+            tabBarIcon: ({ color }) => (
+              <Ionicons name="home-outline" color={color} size={28} />
+            ),
+          }}
+          listeners={{
+            tabPress: () => handleTabPress(0),
+          }}
+        />
+        <Tab.Screen
+          name="Conta"
+          component={withTabTransition(user ? AreaUsuario : AuthStack)}
+          options={{
+            tabBarIcon: ({ color }) => (
+              <Ionicons name="person-outline" color={color} size={28} />
+            ),
+          }}
+          listeners={{
+            tabPress: () => handleTabPress(1),
+          }}
+        />
+        <Tab.Screen
+          name="Rotas"
+          component={withTabTransition(Rotas)}
+          options={{
+            tabBarIcon: ({ color }) => (
+              <Ionicons name="navigate-outline" color={color} size={28} />
+            ),
+          }}
+          listeners={{
+            tabPress: () => handleTabPress(2),
+          }}
+        />
+        <Tab.Screen
+          name="Loja"
+          component={withTabTransition(Loja)}
+          options={{
+            tabBarIcon: ({ color }) => (
+              <Ionicons name="cart-outline" color={color} size={28} />
+            ),
+          }}
+          listeners={{
+            tabPress: () => handleTabPress(3),
+          }}
+        />
+        <Tab.Screen
+          name="Mapa"
+          component={withTabTransition(Mapa)}
+          options={{
+            tabBarIcon: ({ color }) => (
+              <Ionicons name="map-outline" color={color} size={28} />
+            ),
+          }}
+          listeners={{
+            tabPress: () => handleTabPress(4),
+          }}
+        />
+      </Tab.Navigator>
+    </TabTransitionContext.Provider>
   );
 }
 
@@ -129,7 +195,7 @@ function NavigationContent() {
   }
 
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator screenOptions={{ headerShown: false }} sceneContainerStyle={{ backgroundColor: "#0f142c" }}>
       {user ? (
         // Usuário logado - mostrar stack principal com tabs
         <Stack.Screen name="Main" component={MainStack} />
@@ -154,8 +220,34 @@ export default function App() {
     hideNavigationBar();
   }, []);
 
+  useEffect(() => {
+    const prefetch = async () => {
+      try {
+        const cat = await supabase.from("categorias").select("id, nome");
+        if (!cat.error && cat.data) {
+          await AsyncStorage.setItem(
+            "cache:categorias",
+            JSON.stringify({ ts: Date.now(), data: cat.data })
+          );
+        }
+      } catch {}
+      try {
+        const pts = await supabase
+          .from("pontos_turisticos")
+          .select("id, nome, latitude, longitude, descricao, url_img");
+        if (!pts.error && pts.data) {
+          await AsyncStorage.setItem(
+            "cache:pontos:all",
+            JSON.stringify({ ts: Date.now(), data: pts.data })
+          );
+        }
+      } catch {}
+    };
+    prefetch();
+  }, []);
+
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={AppTheme}>
       <StatusBar hidden />
       <NavigationContent />
     </NavigationContainer>

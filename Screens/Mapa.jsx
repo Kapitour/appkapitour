@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Image, Modal } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Modal } from "react-native";
+import Animated, { FadeIn } from "react-native-reanimated";
 import MapView, { Marker, Polyline } from "react-native-maps";
 import * as Location from "expo-location";
 import { Ionicons } from "@expo/vector-icons";
@@ -61,8 +63,24 @@ export default function Mapa() {
 
   useEffect(() => {
     const fetchCategorias = async () => {
-      const { data, error } = await supabase.from("categorias").select("*");
-      if (!error && data) setCategorias(data);
+      try {
+        const cached = await AsyncStorage.getItem("cache:categorias");
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          const isFresh = Date.now() - parsed.ts < 10 * 60 * 1000;
+          if (isFresh) setCategorias(parsed.data);
+        }
+        const { data, error } = await supabase.from("categorias").select("id, nome");
+        if (!error && data) {
+          setCategorias(data);
+          await AsyncStorage.setItem(
+            "cache:categorias",
+            JSON.stringify({ ts: Date.now(), data })
+          );
+        }
+      } catch (e) {
+        // noop
+      }
     };
     fetchCategorias();
   }, []);
@@ -72,6 +90,13 @@ export default function Mapa() {
 
     (async () => {
       try {
+        const cacheKey = `cache:pontos:${categoriaId ?? "all"}`;
+        const cached = await AsyncStorage.getItem(cacheKey);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          const isFresh = Date.now() - parsed.ts < 5 * 60 * 1000;
+          if (isFresh) setPontos(parsed.data);
+        }
         let query = supabase
           .from("pontos_turisticos")
           .select("id, nome, latitude, longitude, descricao, url_img");
@@ -102,6 +127,7 @@ export default function Mapa() {
           : withDistance.sort((a, b) => a.distance - b.distance).slice(0, 6);
 
         setPontos(pontosToShow);
+        await AsyncStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data: pontosToShow }));
       } catch (e) {
         // noop
       }
@@ -212,18 +238,28 @@ export default function Mapa() {
         {rotaCoords.length > 0 && <Polyline coordinates={rotaCoords} strokeColor="#FF0000" strokeWidth={4} />}
       </MapView>
 
-      {selectedPonto && (
-        <View style={styles.infoCard}>
+      {selectedPonto && !showDetailModal && (
+        <Animated.View style={styles.infoCard}>
           {selectedPonto?.url_img ? (
-            <Image source={{ uri: selectedPonto.url_img }} style={styles.img} resizeMode="cover" />
+            <Animated.Image
+              sharedTransitionTag={`point-image-${selectedPonto.id}`}
+              source={{ uri: selectedPonto.url_img }}
+              style={styles.img}
+              resizeMode="cover"
+            />
           ) : null}
-          <Text style={styles.title}>{selectedPonto.nome}</Text>
+          <Animated.Text
+            sharedTransitionTag={`point-title-${selectedPonto.id}`}
+            style={styles.title}
+          >
+            {selectedPonto.nome}
+          </Animated.Text>
           {selectedPonto?.descricao ? (
             <Text numberOfLines={3} ellipsizeMode="tail" style={styles.desc}>
               {selectedPonto.descricao}
             </Text>
           ) : null}
-        </View>
+        </Animated.View>
       )}
 
       {loading && (
@@ -236,7 +272,7 @@ export default function Mapa() {
       {/* Modal de detalhes do ponto */}
       <Modal
         visible={showDetailModal}
-        animationType="slide"
+        animationType="none"
         transparent={false}
       >
         {selectedPonto && (

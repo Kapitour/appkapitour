@@ -25,62 +25,77 @@ const getMostUsedRoutes = async () => {
     return [];
   }
 
-  const rotasComImagemECategorias = await Promise.all(
-    rotas.map(async (rota) => {
-      // Ordenar os pontos da rota pela ordem
-      const pontosOrdenados = rota.rota_ponto.sort((a, b) => a.ordem - b.ordem);
-      const pontoIds = pontosOrdenados.map(p => p.ponto_id).filter(id => id);
-      
-      if (pontoIds.length === 0) return null;
+  const firstPointIds = rotas
+    .map((rota) => {
+      const pontosOrdenados = (rota.rota_ponto || []).sort((a, b) => a.ordem - b.ordem);
+      return pontosOrdenados.length > 0 ? pontosOrdenados[0].ponto_id : null;
+    })
+    .filter((id) => !!id);
 
-      // Buscar ponto turístico para pegar imagem
-      const { data: ponto, error: pontoError } = await supabase
-        .from("pontos_turisticos")
-        .select("url_img")
-        .eq("id", pontoIds[0])
-        .single();
+  const uniqueFirstPointIds = [...new Set(firstPointIds)];
 
-      if (pontoError || !ponto?.url_img) return null;
+  const { data: pontosData } = await supabase
+    .from("pontos_turisticos")
+    .select("id, url_img")
+    .in("id", uniqueFirstPointIds);
 
-      // Buscar categorias dos pontos da rota através da tabela de relacionamento
-      const { data: pontoCategorias, error: categoriasError } = await supabase
-        .from("ponto_categoria")
-        .select("categoria_id")
-        .in("ponto_id", pontoIds);
+  const pontosMap = new Map();
+  (pontosData || []).forEach((p) => pontosMap.set(p.id, p.url_img));
 
-      if (categoriasError) {
-        console.error("Erro ao buscar categorias:", categoriasError.message);
-        return null;
-      }
+  const allPontoIds = rotas
+    .flatMap((rota) => (rota.rota_ponto || []).map((p) => p.ponto_id))
+    .filter((id) => !!id);
 
-      // Extrair IDs de categorias únicas
-      const categoriaIds = [...new Set(pontoCategorias.map(pc => pc.categoria_id))];
-      
-      // Buscar nomes das categorias
-      let categoriasNomes = [];
-      if (categoriaIds.length > 0) {
-        const { data: categorias, error: categoriasNomesError } = await supabase
-          .from("categorias")
-          .select("nome")
-          .in("id", categoriaIds);
-          
-        if (!categoriasNomesError && categorias) {
-          categoriasNomes = categorias.map(c => c.nome);
-        }
-      }
+  const uniqueAllPontoIds = [...new Set(allPontoIds)];
 
+  const { data: pontoCategorias } = await supabase
+    .from("ponto_categoria")
+    .select("ponto_id, categoria_id")
+    .in("ponto_id", uniqueAllPontoIds);
+
+  const categoriaIds = [...new Set((pontoCategorias || []).map((pc) => pc.categoria_id))];
+
+  let categoriasNomesMap = new Map();
+  if (categoriaIds.length > 0) {
+    const { data: categorias } = await supabase
+      .from("categorias")
+      .select("id, nome")
+      .in("id", categoriaIds);
+    categoriasNomesMap = new Map((categorias || []).map((c) => [c.id, c.nome]));
+  }
+
+  const rotaCategoriasMap = new Map();
+  (pontoCategorias || []).forEach((pc) => {
+    const nome = categoriasNomesMap.get(pc.categoria_id);
+    if (!nome) return;
+    const list = rotaCategoriasMap.get(pc.ponto_id) || [];
+    list.push(nome);
+    rotaCategoriasMap.set(pc.ponto_id, list);
+  });
+
+  const result = rotas
+    .map((rota) => {
+      const pontosOrdenados = (rota.rota_ponto || []).sort((a, b) => a.ordem - b.ordem);
+      if (pontosOrdenados.length === 0) return null;
+      const firstId = pontosOrdenados[0].ponto_id;
+      const imagem = pontosMap.get(firstId);
+      if (!imagem) return null;
+      // Compor categorias a partir de todos os pontos da rota
+      const names = (rota.rota_ponto || [])
+        .map((rp) => rotaCategoriasMap.get(rp.ponto_id) || [])
+        .flat();
+      const uniqueNames = [...new Set(names)];
       return {
         id: rota.id,
         nome: rota.nome,
-        imagem: ponto.url_img,
-        categorias: categoriasNomes,
-        pontoId: pontoIds[0], // Adicionando o ID do primeiro ponto para favoritos
+        imagem,
+        categorias: uniqueNames,
+        pontoId: firstId,
       };
     })
-  );
+    .filter((r) => r !== null);
 
-  // Filtra rotas que tenham imagens
-  return rotasComImagemECategorias.filter((r) => r !== null);
+  return result;
 };
 
 const MostCaroussel = ({ onRotaPress }) => {

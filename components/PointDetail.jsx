@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  Image,
   TouchableOpacity,
   Linking,
   ScrollView,
@@ -12,6 +11,7 @@ import {
   TextInput,
   Alert,
 } from "react-native";
+import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -249,7 +249,8 @@ const PointDetail = ({
   return (
     <SafeAreaView style={styles.container}>
       {/* Imagem de fundo */}
-      <Image
+      <Animated.Image
+        sharedTransitionTag={`point-image-${point.id}`}
         source={{ uri: point.url_img }}
         style={styles.backgroundImage}
         resizeMode="cover"
@@ -274,15 +275,19 @@ const PointDetail = ({
       </View>
 
       {/* Card de informações */}
-      <View style={styles.infoCard}>
+      <Animated.View style={styles.infoCard} entering={FadeIn.duration(200)}>
         <View style={styles.contentContainer}>
           <ScrollView
             style={styles.scrollView}
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={true}
           >
-            {/* Nome e avaliação */}
-            <Text style={styles.title}>{point.nome}</Text>
+            <Animated.Text
+              sharedTransitionTag={`point-title-${point.id}`}
+              style={styles.title}
+            >
+              {point.nome}
+            </Animated.Text>
             <View style={styles.ratingContainer}>
               <View style={styles.starsRow}>
                 <View style={styles.starsContainer}>
@@ -309,7 +314,6 @@ const PointDetail = ({
               </View>
             </View>
 
-            {/* Distância e tempo */}
             <View style={styles.statsContainer}>
               <View style={styles.statItem}>
                 <Text style={styles.statValue}>
@@ -326,7 +330,6 @@ const PointDetail = ({
               </View>
             </View>
 
-            {/* Descrição */}
             <Text style={styles.description}>
               {point.descricao ||
                 `${point.nome} é um local favorito entre moradores e visitantes! Este ponto turístico oferece vistas deslumbrantes e experiências únicas. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.`}
@@ -337,7 +340,6 @@ const PointDetail = ({
           </ScrollView>
         </View>
 
-        {/* Botões de ação fixos */}
         <View style={styles.fixedActionButtons}>
           <TouchableOpacity
             style={styles.rateButton}
@@ -359,7 +361,7 @@ const PointDetail = ({
             <Text style={styles.buttonText}>Visitar</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </Animated.View>
 
       {/* Modal de Avaliação */}
       <Modal

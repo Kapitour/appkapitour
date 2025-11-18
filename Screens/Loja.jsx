@@ -53,7 +53,7 @@ const Loja = () => {
     try {
       const { data: produtos, error } = await supabase
         .from('produtos')
-        .select('*');
+        .select('id, nome, descricao, valor_unid, tipo_id, imagem_url');
       
       if (error) {
         console.error('Erro ao buscar produtos:', error);
@@ -74,7 +74,7 @@ const Loja = () => {
     try {
       const { data: tipos, error } = await supabase
         .from('tipos_produto')
-        .select('*');
+        .select('id, nome');
       
       if (error) {
         console.error('Erro ao buscar tipos de produto:', error);
@@ -92,7 +92,7 @@ const Loja = () => {
     try {
       const { data: estoque, error } = await supabase
         .from('estoque')
-        .select('*');
+        .select('produto_id, quantidade');
       
       if (error) {
         console.error('Erro ao buscar estoque:', error);

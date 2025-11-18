@@ -199,22 +199,32 @@ export default function Home() {
                 <Text style={styles.sectionTitle}>Nossos Parceiros</Text>
               </View>
               <View style={styles.carouselContainer}>
-                <Animated.FlatList 
-                  ref={flatListRef}
-                  data={patrocinadores} 
-                  keyExtractor={(item) => item.id} 
-                  horizontal 
-                  showsHorizontalScrollIndicator={false} 
-                  pagingEnabled 
-                  snapToInterval={CARD_WIDTH + SPACING} 
-                  decelerationRate="fast" 
-                  contentContainerStyle={{ paddingHorizontal: SPACING / 2 }} 
-                  renderItem={renderPatrocinador}
-                  onScroll={Animated.event(
-                    [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-                    { useNativeDriver: true }
-                  )}
-                />
+              <Animated.FlatList 
+                ref={flatListRef}
+                data={patrocinadores} 
+                keyExtractor={(item) => item.id} 
+                horizontal 
+                showsHorizontalScrollIndicator={false} 
+                pagingEnabled 
+                snapToInterval={CARD_WIDTH + SPACING} 
+                decelerationRate="fast" 
+                contentContainerStyle={{ paddingHorizontal: SPACING / 2 }} 
+                renderItem={renderPatrocinador}
+                initialNumToRender={patrocinadores.length}
+                getItemLayout={(data, index) => ({
+                  length: CARD_WIDTH + SPACING,
+                  offset: (CARD_WIDTH + SPACING) * index,
+                  index,
+                })}
+                onScrollToIndexFailed={(info) => {
+                  const offset = (CARD_WIDTH + SPACING) * info.index;
+                  flatListRef.current?.scrollToOffset({ offset, animated: true });
+                }}
+                onScroll={Animated.event(
+                  [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+                  { useNativeDriver: true }
+                )}
+              />
               </View>
             </View>
           </View>
