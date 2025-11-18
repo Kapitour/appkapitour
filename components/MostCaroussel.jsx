@@ -10,6 +10,7 @@ import {
   Alert,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { gradients } from "../theme/gradients";
 import { supabase } from "../lib/supabase";
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from "../hooks/useAuth";
@@ -257,7 +258,7 @@ const MostCaroussel = ({ onRotaPress }) => {
               </TouchableOpacity>
               
               <LinearGradient
-                colors={['transparent', 'rgba(0,0,0,0.8)']}
+                {...gradients.overlayDark}
                 style={styles.gradient}
               >
                 <View style={styles.infoContainer}>

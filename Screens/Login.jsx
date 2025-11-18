@@ -15,6 +15,7 @@ import { FontAwesome } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import logo from "../assets/Kapitour.png";
 import { LinearGradient } from "expo-linear-gradient";
+import { gradients } from "../theme/gradients";
 import * as AuthSession from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
 WebBrowser.maybeCompleteAuthSession();
@@ -85,9 +86,7 @@ const LoginScreen = () => {
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <LinearGradient
-        colors={["#c83349", "#090909ff"]}
-        start={{ x: 1.5, y: 0 }}
-        end={{ x: 1, y: 1 }}
+        {...gradients.appBg}
         style={styles.container}
       >
         <Image source={logo} style={{ marginBottom: -250 }} />

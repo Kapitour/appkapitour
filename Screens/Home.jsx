@@ -15,6 +15,10 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import Button from "../components/Button";
+import { colors } from "../theme/colors";
+import Card from "../components/Card";
+import { gradients } from "../theme/gradients";
 import ContainerImg from "../components/ContainerImg";
 import MostCaroussel from "../components/MostCaroussel";
 import { useNavigation } from "@react-navigation/native";
@@ -23,6 +27,7 @@ import { supabase } from "../lib/supabase";
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = width * 0.6;
+const CARD_NARROW = Math.min(width * 0.9, 360);
 const SPACING = 15;
 
 export default function Home() {
@@ -78,26 +83,14 @@ export default function Home() {
     });
 
     return (
-      <Animated.View style={[styles.card, { transform: [{ scale }] }]}>
-        <View style={styles.cardHeader}>
-          <View style={styles.cardImageContainer}>
-            <Image 
-              source={{ uri: item.imageUri }} 
-              style={item.style === "circle" ? styles.imageCircle : styles.imageIncubadora} 
-              resizeMode="contain" 
-            />
-          </View>
-        </View>
-        <View style={styles.cardContent}>
-          <Text style={styles.cardTitle}>{item.title}</Text>
-          <Text style={styles.cardText}>{item.description}</Text>
+      <Animated.View style={{ width: CARD_WIDTH, marginHorizontal: SPACING / 2, transform: [{ scale }] }}>
+        <Card imageUrl={item.imageUri} title={item.title} description={item.description} style={{ height: 220 }}>
           {item.buttonText && (
-            <TouchableOpacity onPress={item.onPress} style={styles.button}>
-              <Text style={styles.buttonText}>{item.buttonText}</Text>
-              <Ionicons name="arrow-forward" size={16} color="#fff" />
-            </TouchableOpacity>
+            <Button variant="primary" icon="arrow-forward" onPress={item.onPress}>
+              {item.buttonText}
+            </Button>
           )}
-        </View>
+        </Card>
       </Animated.View>
     );
   };
@@ -107,12 +100,7 @@ export default function Home() {
   }
 
   return (
-    <LinearGradient 
-      colors={["#c83349", "#0f142c"]} 
-      start={{ x: 1.5, y: 0 }} 
-      end={{ x: 1, y: 1 }} 
-      style={styles.safeArea}
-    >
+    <LinearGradient {...gradients.appBg} style={styles.safeArea}>
       <SafeAreaView style={styles.safeArea}>
         <StatusBar barStyle="light-content" backgroundColor="#c83349" />
         <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -122,12 +110,7 @@ export default function Home() {
           </View>
 
           <View style={styles.content}>
-            <LinearGradient 
-              colors={["#c833498d", "#e65a6d8a", "#f7a10069"]} 
-              start={{ x: 0, y: 0 }} 
-              end={{ x: 1, y: 1 }} 
-              style={styles.slogan}
-            >
+            <LinearGradient {...gradients.slogan} style={styles.slogan}>
               <Ionicons name="compass" size={24} color="#fff" style={styles.sloganIcon} />
               <Text style={styles.sloganText}>
                 Somos a Kapitour, e viemos lhe revelar o que Maricá pode te proporcionar
@@ -143,26 +126,13 @@ export default function Home() {
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Descubra no Mapa</Text>
               </View>
-              <TouchableOpacity 
-                activeOpacity={0.8}
-                style={styles.discoverCard} 
-                onPress={() => navigation.navigate("Mapa")}
+              <Card
+                title="Descubra pontos turísticos próximos"
+                description="Abra o mapa e explore por categoria"
+                style={{ alignSelf: 'center', width: CARD_NARROW, marginVertical: 10 }}
               >
-                <LinearGradient 
-                  colors={["#c83349", "#f7a000"]} 
-                  start={{x: 0, y: 0}}
-                  end={{x: 1, y: 0}}
-                  style={styles.discoverGradient}
-                >
-                  <View style={styles.discoverIconContainer}>
-                    <Ionicons name="map" size={32} color="#fff" />
-                  </View>
-                  <View style={styles.discoverTextContainer}>
-                    <Text style={styles.discoverTitle}>Descubra pontos turísticos próximos</Text>
-                    <Text style={styles.discoverSubtitle}>Abra o mapa e explore por categoria</Text>
-                  </View>
-                </LinearGradient>
-              </TouchableOpacity>
+                <Button variant="primary" icon="map" onPress={() => navigation.navigate("Mapa")}>Abrir Mapa</Button>
+              </Card>
             </View>
 
             {/* ============== SEÇÃO DO CLIMA COM CAPIVARA ============== */}
@@ -170,27 +140,14 @@ export default function Home() {
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Previsão do Tempo</Text>
               </View>
-              
-              {/* Card da Capivara com Balão de Fala */}
-              <View style={styles.capybaraCard}>
-                {/* Balão de fala clicável */}
-                <TouchableOpacity 
-                  style={styles.speechBubble}
-                  onPress={() => navigation.navigate('Clima')}
-                >
-                  <View style={styles.bubbleHeader}>
-                    <Ionicons name="sunny-outline" size={14} color="#fff" />
-                    <Text style={styles.bubbleTitle}>Clima em Maricá</Text>
-                  </View>
-                  <Text style={styles.bubbleText}>Clique aqui para consultar a previsão do tempo e dicas para seu passeio!</Text>
-                </TouchableOpacity>
-                
-                {/* Imagem da capivara no lado direito */}
-                <Image
-                  source={{ uri: "https://github.com/Kapitour/Imgs-Padr-o/blob/main/KapiTempo/MASCULINO/AMENO%20-%20ENSOLARADO.png?raw=true" }}
-                  style={styles.capybaraImage}
-                />
-              </View>
+              <Card
+                imageUrl={"https://github.com/Kapitour/Imgs-Padr-o/blob/main/KapiTempo/MASCULINO/AMENO%20-%20ENSOLARADO.png?raw=true"}
+                title="Clima em Maricá"
+                description="Clique para consultar a previsão do tempo e dicas para seu passeio!"
+                style={{ alignSelf: 'center', width: CARD_NARROW }}
+              >
+                <Button variant="secondary" icon="sunny-outline" onPress={() => navigation.navigate('Clima')}>Ver clima</Button>
+              </Card>
             </View>
             {/* ============================================================= */}
 
@@ -229,7 +186,7 @@ export default function Home() {
             </View>
           </View>
 
-          <LinearGradient colors={["#c83349", "#0f142c"]} style={styles.footer}>
+          <LinearGradient {...gradients.appBg} style={styles.footer}>
             <Text style={styles.footerText}>© 2023 Kapitour - Todos os direitos reservados</Text>
           </LinearGradient>
         </ScrollView>
@@ -333,184 +290,27 @@ const styles = StyleSheet.create({
     height: 240,
     marginTop: 10,
   },
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 20,
-    padding: 15,
-    width: CARD_WIDTH,
-    marginHorizontal: SPACING / 2,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  cardHeader: {
-    marginBottom: 15,
-    alignItems: "center",
-  },
-  cardImageContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    overflow: "hidden",
-    backgroundColor: "transparent",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  imageCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-  },
-  imageIncubadora: {
-    width: "100%",
-    height: 80,
-    resizeMode: "contain",
-  },
-  cardContent: {
-    alignItems: "center",
-  },
-  cardTitle: {
-    color: "#c83349",
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 8,
-    textAlign: "center",
-  },
-  cardText: {
-    color: "#333",
-    textAlign: "center",
-    marginBottom: 12,
-    fontSize: 12,
-  },
-  button: {
-    backgroundColor: "#c83349",
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  buttonText: {
-    color: "#fff",
-    marginRight: 6,
-    fontWeight: "600",
-  },
+  
   discoverCard: {
-    marginHorizontal: 20,
-    marginVertical: 10,
-    borderRadius: 16,
-    elevation: 8,
-    shadowColor: "#c83349",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    overflow: 'hidden',
+    display: 'none',
   },
   discoverGradient: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 16,
-    borderRadius: 16,
+    display: 'none',
   },
   discoverIconContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 15,
+    display: 'none',
   },
   discoverTextContainer: {
-    flex: 1,
+    display: 'none',
   },
   discoverTitle: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 4,
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
+    display: 'none',
   },
   discoverSubtitle: {
-    color: "#fff",
-    fontSize: 14,
-    opacity: 0.9,
+    display: 'none',
   },
 
-  // ============== ESTILOS DO BOTÃO ADICIONADOS AQUI ==============
-  weatherButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.15)', // Um fundo semi-transparente para combinar
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 30,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-    marginHorizontal: 20,
-  },
-  weatherButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginLeft: 10,
-  },
-  // =============================================================
-
-  // ============== ESTILOS DA CAPIVARA ADICIONADOS AQUI ==============
-  capybaraCard: {
-    width: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 10,
-    backgroundColor: 'rgba(0, 0, 0, 0.2)',
-    borderRadius: 20,
-    padding: 15,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    overflow: 'hidden',
-  },
-  capybaraImage: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    marginLeft: 10,
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  speechBubble: {
-    flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    borderRadius: 15,
-    padding: 15,
-    marginRight: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  bubbleHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  bubbleTitle: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginLeft: 8,
-  },
-  bubbleText: {
-    color: 'rgba(255, 255, 255, 0.9)',
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  // =================================================================
+  // estilos antigos removidos após migração para Card/Button
 
   footer: {
     padding: 15,

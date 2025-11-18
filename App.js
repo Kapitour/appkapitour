@@ -3,6 +3,7 @@ import * as NavigationBar from "expo-navigation-bar";
 import * as SystemUI from "expo-system-ui";
 import { StatusBar } from "expo-status-bar";
 import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { StyleSheet, View, ActivityIndicator } from "react-native";
@@ -257,10 +258,12 @@ export default function App() {
   }, []);
 
   return (
-    <NavigationContainer theme={AppTheme}>
-      <StatusBar hidden />
-      <NavigationContent />
-    </NavigationContainer>
+    <SafeAreaProvider>
+      <NavigationContainer theme={AppTheme}>
+        <StatusBar hidden />
+        <NavigationContent />
+      </NavigationContainer>
+    </SafeAreaProvider>
   );
 }
 

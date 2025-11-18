@@ -14,6 +14,7 @@ import {
 import { FontAwesome } from "@expo/vector-icons";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { gradients } from "../theme/gradients";
 import { useNavigation } from "@react-navigation/native";
 
 const Contato = () => {
@@ -51,9 +52,7 @@ const Contato = () => {
     <View style={{ flex: 1 }}>
       {/* Gradiente fixo no fundo */}
       <LinearGradient
-        colors={["#c3073f", "#1a1a2e"]} // vermelho e azul escuro  Não esquecer a cor padrão
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
+        {...gradients.appBg}
         style={styles.gradient}
       />
 

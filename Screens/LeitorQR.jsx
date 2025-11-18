@@ -10,10 +10,12 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { gradients } from "../theme/gradients";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { useAuth } from "../hooks/useAuth";
 import { supabase } from "../lib/supabase";
 import { buscarCuponsDisponiveis, verificarCupomResgatado, verificarResgatePorCampanha, resgatarCupom } from "../utils/cupomManager";
+import { handleError, handleNetworkError } from "../utils/errors";
 
 const LeitorQR = () => {
   const navigation = useNavigation();
@@ -73,13 +75,8 @@ const LeitorQR = () => {
       setUsuarioEscaneado(usuario);
       setShowCuponsModal(true);
     } catch (error) {
-      console.error("Erro ao processar QR Code:", error);
-      Alert.alert("Erro", "Não foi possível processar o QR Code", [
-        {
-          text: "OK",
-          onPress: () => setScanned(false), // 👈 libera leitura de novo
-        },
-      ]);
+      handleNetworkError("LeitorQR.handleQRCodeScanned", error);
+      setScanned(false);
     } finally {
       setLoading(false);
     }
@@ -125,8 +122,7 @@ const LeitorQR = () => {
         }
       ]);
     } catch (error) {
-      console.error('Erro ao resgatar:', error);
-      Alert.alert('Erro', error.message || 'Não foi possível resgatar o cupom.');
+      handleError("LeitorQR.handleRedeem", error, error.message || "Não foi possível resgatar o cupom.");
     } finally {
       setRedeemingId(null);
     }
@@ -151,9 +147,7 @@ const LeitorQR = () => {
 
   return (
     <LinearGradient
-      colors={["#c83349", "#0f142c"]}
-      start={{ x: 1.5, y: 0 }}
-      end={{ x: 1, y: 1 }}
+      {...gradients.appBg}
       style={styles.container}
     >
       {/* Header */}

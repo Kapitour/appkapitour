@@ -16,6 +16,16 @@ import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../lib/supabase";
 import { LinearGradient } from "expo-linear-gradient";
 import { salvarProgressoRota, carregarProgressoRota } from "../utils/progressManager";
+import ProgressBar from "../components/ProgressBar";
+import RatingStars from "../components/RatingStars";
+import Card from "../components/Card";
+import Button from "../components/Button";
+import { submitRating, getAverageRating } from "../services/ratings";
+import { colors } from "../theme/colors";
+import { prefetchImages } from "../utils/images";
+import { gradients } from "../theme/gradients";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useAuth } from "../hooks/useAuth";
 
 export default function DetalhesRota({ rota, voltar }) {
   const [pontos, setPontos] = useState([]);
@@ -23,12 +33,14 @@ export default function DetalhesRota({ rota, voltar }) {
   const [isStarted, setIsStarted] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [currentRating, setCurrentRating] = useState(0);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [avgRating, setAvgRating] = useState(null);
   const windowHeight = Dimensions.get("window").height;
-  const TOP_PADDING = 55;
-  const TAB_BAR_HEIGHT = 90;
+  const insets = useSafeAreaInsets();
+  const { userInfo } = useAuth();
   const GAP_FROM_TAB = 10;
   const HEADER_OFFSET = 150;
-  const cardMinHeight = Math.max(300, windowHeight - TOP_PADDING - HEADER_OFFSET - TAB_BAR_HEIGHT - GAP_FROM_TAB);
+  const cardMinHeight = Math.max(300, windowHeight - (insets.top || 55) - HEADER_OFFSET - (insets.bottom || 90) - GAP_FROM_TAB);
 
   useEffect(() => {
     const fetchPontosDaRota = async () => {
@@ -80,6 +92,33 @@ export default function DetalhesRota({ rota, voltar }) {
     fetchPontosDaRota();
   }, [rota.id]);
 
+  useEffect(() => {
+    setImageLoaded(false);
+    if (isStarted) {
+      prefetchImages([
+        pontos[currentIndex]?.url_img,
+        pontos[currentIndex + 1]?.url_img,
+      ]);
+    }
+  }, [isStarted, currentIndex, pontos]);
+
+  useEffect(() => {
+    const loadAvg = async () => {
+      const id = pontos[currentIndex]?.id;
+      if (isStarted && id) {
+        try {
+          const avg = await getAverageRating(id);
+          setAvgRating(avg);
+        } catch {
+          setAvgRating(null);
+        }
+      } else {
+        setAvgRating(null);
+      }
+    };
+    loadAvg();
+  }, [isStarted, currentIndex, pontos]);
+
   
 
   const progresso = pontos.length
@@ -88,12 +127,7 @@ export default function DetalhesRota({ rota, voltar }) {
 
   if (loading) {
     return (
-      <LinearGradient
-        colors={["#0f142c", "#c83349", "#f7a000"]}
-        start={{ x: 1.5, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.containerPrincipal}
-      >
+      <LinearGradient {...gradients.appBg} style={styles.containerPrincipal}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#fff" />
           <Text style={styles.loadingText}>Carregando detalhes da rota...</Text>
@@ -103,27 +137,13 @@ export default function DetalhesRota({ rota, voltar }) {
   }
 
   return (
-    <LinearGradient
-      colors={["#c83349", "#0f142c"]}
-      start={{ x: 1.5, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={styles.containerPrincipal}
-    >
+    <LinearGradient {...gradients.appBg} style={styles.containerPrincipal}>
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={[styles.contentContainer, { paddingBottom: TAB_BAR_HEIGHT + 10 }]}
+        contentContainerStyle={[styles.contentContainer, { paddingTop: (insets.top || 55), paddingBottom: (insets.bottom || 90) + GAP_FROM_TAB }]}
       >
         <View style={styles.progressContainer}>
-          <Text style={styles.progressText}>Progresso: {Math.round(progresso)}%</Text>
-          <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: `${progresso}%` }]} />
-          </View>
-          {isStarted && pontos.length > 0 && (
-            <View style={styles.stepBadge}>
-              <Ionicons name="flag" size={14} color="#fff" />
-              <Text style={styles.stepBadgeText}>Ponto {currentIndex + 1} de {pontos.length}</Text>
-            </View>
-          )}
+          <ProgressBar percent={progresso} badgeText={isStarted && pontos.length > 0 ? `Ponto ${currentIndex + 1} de ${pontos.length}` : null} />
         </View>
 
         {!isStarted ? (
@@ -151,141 +171,47 @@ export default function DetalhesRota({ rota, voltar }) {
             </TouchableOpacity>
           </>
         ) : (
-          pontos[currentIndex]?.url_img ? (
-            <ImageBackground
-              source={{ uri: pontos[currentIndex].url_img }}
-              style={[styles.fullCardBg, { minHeight: cardMinHeight, marginBottom: 10 }]}
-              imageStyle={styles.fullCardBgImage}
-            >
-              {currentIndex > 0 && (
-                <TouchableOpacity
-                  style={styles.backOverlayButton}
-                  onPress={() => {
-                    const prev = currentIndex - 1;
-                    setCurrentIndex(prev);
-                    setCurrentRating(pontos[prev]?.rating || 0);
-                  }}
-                >
-                  <Ionicons name="arrow-back" size={20} color="#fff" />
-                </TouchableOpacity>
-              )}
-              <View style={styles.fullOverlayContent}>
-                <Text style={styles.fullTitle}>{pontos[currentIndex]?.nome}</Text>
-                <Text style={styles.fullDesc}>{pontos[currentIndex]?.descricao}</Text>
-                <View style={styles.ratingRow}>
-                  {[1,2,3,4,5].map(star => (
-                    <TouchableOpacity key={star} onPress={() => setCurrentRating(star)}>
-                      <Ionicons
-                        name={currentRating >= star ? "star" : "star-outline"}
-                        size={26}
-                        color="#f7a000"
-                      />
-                    </TouchableOpacity>
-                  ))}
-                </View>
-                <View style={styles.fullButtons}>
-                  <TouchableOpacity
-                    style={styles.gpsButton}
-                    onPress={() => Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${pontos[currentIndex]?.latitude},${pontos[currentIndex]?.longitude}`)}
-                  >
-                    <View style={styles.buttonInline}>
-                      <Ionicons name="navigate" size={18} color="#fff" />
-                      <Text style={styles.gpsText}>Abrir no GPS</Text>
-                    </View>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.nextButton}
-                    onPress={async () => {
-                      if (currentRating === 0) {
-                        Alert.alert("Avaliação necessária", "Avalie este ponto antes de prosseguir.");
-                        return;
-                      }
-                      const updated = [...pontos];
-                      updated[currentIndex] = { ...updated[currentIndex], completed: true, rating: currentRating };
-                      setPontos(updated);
-                      await salvarProgressoRota(rota.id, updated);
-                      const nextIndex = currentIndex + 1;
-                      if (nextIndex >= updated.length) {
-                        setIsStarted(false);
-                      } else {
-                        setCurrentIndex(nextIndex);
-                        setCurrentRating(0);
-                      }
-                    }}
-                  >
-                    <View style={styles.buttonInline}>
-                      <Ionicons name="arrow-forward" size={18} color="#fff" />
-                      <Text style={styles.nextText}>Próximo</Text>
-                    </View>
-                  </TouchableOpacity>
-                </View>
+          <Card
+            imageUrl={pontos[currentIndex]?.url_img}
+            title={pontos[currentIndex]?.nome}
+            description={pontos[currentIndex]?.descricao}
+            showBack={currentIndex > 0}
+            onBack={() => {
+              const prev = currentIndex - 1;
+              setCurrentIndex(prev);
+              setCurrentRating(pontos[prev]?.rating || 0);
+            }}
+            style={{ minHeight: cardMinHeight, marginBottom: 10 }}
+          >
+            {avgRating !== null ? (
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                <Ionicons name="star" size={16} color={colors.accent} />
+                <Text style={{ color: colors.textMuted }}>Média: {avgRating}</Text>
               </View>
-            </ImageBackground>
-          ) : (
-            <View style={[styles.fullCard, { minHeight: cardMinHeight, marginBottom: 10 }]}>
-              {currentIndex > 0 && (
-                <TouchableOpacity
-                  style={styles.backOverlayButton}
-                  onPress={() => {
-                    const prev = currentIndex - 1;
-                    setCurrentIndex(prev);
-                    setCurrentRating(pontos[prev]?.rating || 0);
-                  }}
-                >
-                  <Ionicons name="arrow-back" size={20} color="#fff" />
-                </TouchableOpacity>
-              )}
-              <Text style={styles.fullTitle}>{pontos[currentIndex]?.nome}</Text>
-              <Text style={styles.fullDesc}>{pontos[currentIndex]?.descricao}</Text>
-              <View style={styles.ratingRow}>
-                {[1,2,3,4,5].map(star => (
-                  <TouchableOpacity key={star} onPress={() => setCurrentRating(star)}>
-                    <Ionicons
-                      name={currentRating >= star ? "star" : "star-outline"}
-                      size={26}
-                      color="#f7a000"
-                    />
-                  </TouchableOpacity>
-                ))}
-              </View>
-              <View style={styles.fullButtons}>
-                <TouchableOpacity
-                  style={styles.gpsButton}
-                  onPress={() => Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${pontos[currentIndex]?.latitude},${pontos[currentIndex]?.longitude}`)}
-                >
-                  <View style={styles.buttonInline}>
-                    <Ionicons name="navigate" size={18} color="#fff" />
-                    <Text style={styles.gpsText}>Abrir no GPS</Text>
-                  </View>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.nextButton}
-                  onPress={async () => {
-                    if (currentRating === 0) {
-                      Alert.alert("Avaliação necessária", "Avalie este ponto antes de prosseguir.");
-                      return;
-                    }
-                    const updated = [...pontos];
-                    updated[currentIndex] = { ...updated[currentIndex], completed: true, rating: currentRating };
-                    setPontos(updated);
-                    await salvarProgressoRota(rota.id, updated);
-                    const nextIndex = currentIndex + 1;
-                    if (nextIndex >= updated.length) {
-                      setIsStarted(false);
-                    } else {
-                      setCurrentIndex(nextIndex);
-                      setCurrentRating(0);
-                    }
-                  }}
-                >
-                  <View style={styles.buttonInline}>
-                    <Ionicons name="arrow-forward" size={18} color="#fff" />
-                    <Text style={styles.nextText}>Próximo</Text>
-                  </View>
-                </TouchableOpacity>
-              </View>
+            ) : null}
+            <RatingStars value={currentRating} onChange={setCurrentRating} />
+            <View style={styles.fullButtons}>
+              <Button variant="secondary" icon="navigate" onPress={() => Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${pontos[currentIndex]?.latitude},${pontos[currentIndex]?.longitude}`)}>Abrir no GPS</Button>
+              <Button variant="primary" icon="arrow-forward" onPress={async () => {
+                if (currentRating === 0) {
+                  Alert.alert("Avaliação necessária", "Avalie este ponto antes de prosseguir.");
+                  return;
+                }
+                const updated = [...pontos];
+                updated[currentIndex] = { ...updated[currentIndex], completed: true, rating: currentRating };
+                setPontos(updated);
+                await salvarProgressoRota(rota.id, updated);
+                try { await submitRating(updated[currentIndex].id, userInfo?.id ?? null, currentRating); } catch {}
+                const nextIndex = currentIndex + 1;
+                if (nextIndex >= updated.length) {
+                  setIsStarted(false);
+                } else {
+                  setCurrentIndex(nextIndex);
+                  setCurrentRating(0);
+                }
+              }}>Próximo</Button>
             </View>
-          )
+          </Card>
         )}
 
         
@@ -295,7 +221,6 @@ export default function DetalhesRota({ rota, voltar }) {
     </LinearGradient>
   );
 }
-
 const styles = StyleSheet.create({
   // Estilos principais seguindo o padrão do Rotas.jsx
   containerPrincipal: {
@@ -451,6 +376,16 @@ const styles = StyleSheet.create({
   },
   fullCardBgImage: {
     resizeMode: "cover",
+  },
+  imagePlaceholder: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0,0,0,0.2)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   fullOverlayContent: {
     padding: 16,

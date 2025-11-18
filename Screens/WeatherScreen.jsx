@@ -11,6 +11,7 @@ import {
   ScrollView
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { gradients } from "../theme/gradients";
 import { Ionicons } from "@expo/vector-icons";
 import { getWeatherByCity } from "./weatherApi.js"; 
 
@@ -300,7 +301,7 @@ export default function WeatherScreen({ navigation }) {
 
   return (
     <LinearGradient 
-      colors={["#c83349", "#0f142c"]} 
+      {...gradients.appBg}
       style={styles.safeArea}
     >
       <ScrollView style={styles.safeArea}>

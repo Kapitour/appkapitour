@@ -11,6 +11,7 @@ import {
   TextInput,
   Alert,
 } from "react-native";
+import { handleError } from "../utils/errors";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -94,18 +95,12 @@ const PointDetail = ({
   // Alternar favorito
   const toggleFavorito = async () => {
     if (!user?.id) {
-      Alert.alert(
-        "Atenção",
-        "Você precisa estar logado para favoritar pontos turísticos."
-      );
+      handleError("PointDetail.toggleFavorito", new Error("Not logged in"), "Você precisa estar logado para favoritar pontos turísticos.");
       return;
     }
 
     if (!userInfo) {
-      Alert.alert(
-        "Erro",
-        "Não foi possível obter suas informações. Tente novamente."
-      );
+      handleError("PointDetail.toggleFavorito", new Error("User info missing"), "Não foi possível obter suas informações. Tente novamente.");
       return;
     }
 
@@ -137,8 +132,7 @@ const PointDetail = ({
         onFavorite(point.id, !isFavorite);
       }
     } catch (err) {
-      console.error("Erro ao atualizar favorito:", err);
-      Alert.alert("Erro", "Não foi possível atualizar seus favoritos.");
+      handleError("PointDetail.toggleFavorito", err, "Não foi possível atualizar seus favoritos.");
     }
   };
 
@@ -168,19 +162,13 @@ const PointDetail = ({
   // Salvar avaliação
   const saveRating = async () => {
     if (!user?.id || !userInfo) {
-      Alert.alert(
-        "Atenção",
-        "Você precisa estar logado para avaliar pontos turísticos."
-      );
+      handleError("PointDetail.saveRating", new Error("Not logged in"), "Você precisa estar logado para avaliar pontos turísticos.");
       setShowRatingModal(false);
       return;
     }
 
     if (rating === 0) {
-      Alert.alert(
-        "Erro",
-        "Por favor, selecione uma avaliação de 1 a 5 estrelas."
-      );
+      handleError("PointDetail.saveRating", new Error("Invalid rating"), "Por favor, selecione uma avaliação de 1 a 5 estrelas.");
       return;
     }
 
@@ -226,8 +214,7 @@ const PointDetail = ({
       setShowRatingModal(false);
       fetchPointRating(); // Atualizar a avaliação média
     } catch (err) {
-      console.error("Erro ao salvar avaliação:", err);
-      Alert.alert("Erro", "Não foi possível salvar sua avaliação.");
+      handleError("PointDetail.saveRating", err, "Não foi possível salvar sua avaliação.");
     } finally {
       setLoading(false);
     }

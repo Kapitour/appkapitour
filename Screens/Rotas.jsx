@@ -6,7 +6,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
-  Image,
   Alert,
 } from "react-native";
 import { supabase } from "../lib/supabase";
@@ -14,6 +13,11 @@ import DetalhesRota from "./DetalhesRotas";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from "../hooks/useAuth";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Card from "../components/Card";
+import { colors } from "../theme/colors";
+import { handleError } from "../utils/errors";
+import { gradients } from "../theme/gradients";
 
 export default function Rotas() {
   const [rotas, setRotas] = useState([]);
@@ -22,6 +26,7 @@ export default function Rotas() {
   const [favoritos, setFavoritos] = useState([]);
   const { user } = useAuth();
   const [userInfo, setUserInfo] = useState(null);
+  const insets = useSafeAreaInsets();
 
   const fetchRotas = async () => {
     setLoading(true);
@@ -199,18 +204,12 @@ export default function Rotas() {
         setFavoritos([...favoritos, pontoId]);
       }
     } catch (err) {
-      console.error("Erro ao atualizar favorito:", err);
-      Alert.alert("Erro", "Não foi possível atualizar o favorito.");
+      handleError("Rotas.toggleFavorito", err, "Não foi possível atualizar o favorito.");
     }
   };
 
   if (loading) return (
-    <LinearGradient
-      colors={["#c83349", "#0f142c"]}
-      start={{ x: 1.5, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={styles.containerPrincipal}
-    >
+    <LinearGradient {...gradients.appBg} style={styles.containerPrincipal}>
       <ActivityIndicator size="large" color="#C3073F" style={styles.loader} />
     </LinearGradient>
   );
@@ -224,14 +223,9 @@ export default function Rotas() {
     );
 
   return (
-    <LinearGradient
-      colors={["#c83349", "#0f142c"]}
-      start={{ x: 1.5, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={styles.containerPrincipal}
-    >
+    <LinearGradient {...gradients.appBg} style={styles.containerPrincipal}>
       <ScrollView
-        contentContainerStyle={styles.contentContainer}
+        contentContainerStyle={[styles.contentContainer, { paddingTop: (insets.top || 55), paddingBottom: (insets.bottom || 90) + 10 }]}
         style={styles.scroll}
       >
         <Text style={styles.title}>Escolher Rotas Turísticas</Text>
@@ -243,15 +237,7 @@ export default function Rotas() {
               onPress={() => setRotaSelecionada(rota)}
               activeOpacity={0.8}
             >
-              <View style={styles.card}>
-                {rota.imagem ? (
-                  <Image source={{ uri: rota.imagem }} style={styles.image} />
-                ) : (
-                  <View style={[styles.image, styles.noImage]}>
-                    <Text style={styles.noImageText}>Sem imagem</Text>
-                  </View>
-                )}
-                
+              <Card imageUrl={rota.imagem} title={rota.nome} style={{ height: 200 }}>
                 <TouchableOpacity 
                   style={styles.favoriteButton}
                   onPress={(e) => toggleFavorito(rota.id, e)}
@@ -259,29 +245,20 @@ export default function Rotas() {
                   <Ionicons 
                     name={isFavorito(rota.id) ? "heart" : "heart-outline"} 
                     size={24} 
-                    color={isFavorito(rota.id) ? "#c3073f" : "white"} 
+                    color={isFavorito(rota.id) ? colors.primary : "white"} 
                   />
                 </TouchableOpacity>
-                
-                <LinearGradient
-                  colors={['transparent', 'rgba(0,0,0,0.8)']}
-                  style={styles.gradient}
-                >
-                  <View style={styles.infoContainer}>
-                    <Text style={styles.nome}>{rota.nome}</Text>
-                    <View style={styles.categoriesContainer}>
-                      {rota.categorias && rota.categorias.slice(0, 2).map((categoria, idx) => (
-                        <View key={idx} style={styles.categoryTag}>
-                          <Text style={styles.categoryText}>{categoria}</Text>
-                        </View>
-                      ))}
-                      {rota.categorias && rota.categorias.length > 2 && (
-                        <Text style={styles.moreCategories}>+{rota.categorias.length - 2}</Text>
-                      )}
+                <View style={styles.categoriesContainer}>
+                  {rota.categorias && rota.categorias.slice(0, 2).map((categoria, idx) => (
+                    <View key={idx} style={styles.categoryTag}>
+                      <Text style={styles.categoryText}>{categoria}</Text>
                     </View>
-                  </View>
-                </LinearGradient>
-              </View>
+                  ))}
+                  {rota.categorias && rota.categorias.length > 2 && (
+                    <Text style={styles.moreCategories}>+{rota.categorias.length - 2}</Text>
+                  )}
+                </View>
+              </Card>
             </TouchableOpacity>
           ))}
         </View>
@@ -321,46 +298,6 @@ const styles = StyleSheet.create({
   cardContainer: {
     width: "100%",
     marginBottom: 16,
-  },
-  card: {
-    width: "100%",
-    height: 200,
-    borderRadius: 10,
-    overflow: "hidden",
-    position: "relative",
-  },
-  image: {
-    width: "100%",
-    height: "100%",
-    resizeMode: "cover",
-  },
-  noImage: {
-    backgroundColor: "#333",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  noImageText: {
-    color: "#fff",
-    fontSize: 14,
-  },
-  gradient: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: "50%",
-    paddingHorizontal: 12,
-    paddingBottom: 12,
-    justifyContent: "flex-end",
-  },
-  infoContainer: {
-    width: "100%",
-  },
-  nome: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 6,
   },
   categoriesContainer: {
     flexDirection: "row",

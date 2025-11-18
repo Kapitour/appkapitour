@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
+import { gradients } from "../theme/gradients";
 import { supabase } from "../lib/supabase";
 
 const Loja = () => {
@@ -202,9 +203,7 @@ const Loja = () => {
   if (loading) {
     return (
       <LinearGradient
-        colors={["#c83349", "#0f142c"]}
-        start={{ x: 1.5, y: 0 }}
-        end={{ x: 1, y: 1 }}
+        {...gradients.appBg}
         style={styles.containerPrincipal}
       >
         <View style={styles.loadingContainer}>
@@ -217,9 +216,7 @@ const Loja = () => {
 
   return (
     <LinearGradient
-      colors={["#c83349", "#0f142c"]}
-      start={{ x: 1.5, y: 0 }}
-      end={{ x: 1, y: 1 }}
+      {...gradients.appBg}
       style={styles.containerPrincipal}
     >
       <ScrollView style={styles.scroll}>

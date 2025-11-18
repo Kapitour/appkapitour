@@ -14,6 +14,7 @@ import {
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { MaterialCommunityIcons, Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { gradients } from "../theme/gradients";
 import { useAuth } from "../hooks/useAuth";
 import QRCode from "react-native-qrcode-svg";
 import { supabase } from "../lib/supabase";
@@ -384,7 +385,7 @@ const AreaUsuario = () => {
   if (loading) {
     return (
       <LinearGradient
-        colors={["#c83349", "#0f142c"]}
+        {...gradients.appBg}
         style={styles.containerBack}
       >
         <View style={styles.loadingContainer}>
@@ -397,7 +398,7 @@ const AreaUsuario = () => {
   if (!user) {
     return (
       <LinearGradient
-        colors={["#c83349", "#0f142c"]}
+        {...gradients.appBg}
         style={styles.containerBack}
       >
         <View style={styles.errorContainer}>
@@ -438,9 +439,7 @@ const AreaUsuario = () => {
 
   return (
     <LinearGradient
-      colors={["#c83349", "#0f142c"]}
-      start={{ x: 1.5, y: 0 }}
-      end={{ x: 1, y: 1 }}
+      {...gradients.appBg}
       style={styles.containerBack}
     >
       <ScrollView
@@ -467,9 +466,7 @@ const AreaUsuario = () => {
               onPress={() => setCardExpanded(!cardExpanded)}
             >
               <LinearGradient
-                colors={["#c83349", "#a12a3a"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
+                {...gradients.redDiagonal}
                 style={styles.cardHeader}
               >
                 <View style={styles.cardHeaderContent}>
@@ -546,9 +543,7 @@ const AreaUsuario = () => {
                   activeOpacity={0.8}
                 >
                   <LinearGradient
-                    colors={["#c83349", "#a12a3a"]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
+                    {...gradients.redHorizontal}
                     style={styles.editButtonGradient}
                   >
                     <MaterialCommunityIcons name="pencil" size={20} color="#fff" />
@@ -570,7 +565,7 @@ const AreaUsuario = () => {
               ]}
             >
               <LinearGradient
-                colors={["rgba(255,255,255,0.15)", "rgba(255,255,255,0.05)"]}
+                {...gradients.overlayLight}
                 style={styles.qrCodeCard}
               >
                 <View style={styles.qrCodeIconWrapper}>
@@ -611,7 +606,7 @@ const AreaUsuario = () => {
               ]}
             >
               <LinearGradient
-                colors={["rgba(255,255,255,0.15)", "rgba(255,255,255,0.05)"]}
+                {...gradients.overlayLight}
                 style={styles.leitorCard}
               >
                 <View style={styles.leitorIconWrapper}>
@@ -643,15 +638,13 @@ const AreaUsuario = () => {
 
           <View style={styles.actionsContainer}>
             {tipoUsuarioId === 2 ? (
-              <TouchableOpacity
-                style={styles.cupom}
-                onPress={() => setShowCampanhas(true)}
-                activeOpacity={0.8}
-              >
+                <TouchableOpacity
+                  style={styles.cupom}
+                  onPress={() => setShowCampanhas(true)}
+                  activeOpacity={0.8}
+                >
                 <LinearGradient
-                  colors={["#c83349", "#a12a3a"]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
+                  {...gradients.redHorizontal}
                   style={styles.cupomGradient}
                 >
                   <MaterialCommunityIcons
@@ -669,9 +662,7 @@ const AreaUsuario = () => {
                 activeOpacity={0.8}
               >
                 <LinearGradient
-                  colors={["#c83349", "#a12a3a"]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
+                  {...gradients.redHorizontal}
                   style={styles.cupomGradient}
                 >
                   <MaterialCommunityIcons
@@ -691,9 +682,7 @@ const AreaUsuario = () => {
               activeOpacity={0.8}
             >
               <LinearGradient
-                colors={["#c83349", "#a12a3a"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
+                {...gradients.redHorizontal}
                 style={styles.cupomGradient}
               >
                 <MaterialCommunityIcons
@@ -711,9 +700,7 @@ const AreaUsuario = () => {
               activeOpacity={0.8}
             >
               <LinearGradient
-                colors={["#a12a3a", "#8a1f2d"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
+                {...gradients.logoutRedDark}
                 style={styles.logoutButtonGradient}
               >
                 <MaterialCommunityIcons name="logout" size={20} color="#fff" />
@@ -750,7 +737,7 @@ const AreaUsuario = () => {
                     style={styles.favoritoImagem}
                   />
                   <LinearGradient
-                    colors={["transparent", "rgba(0,0,0,0.8)"]}
+                    {...gradients.overlayDark}
                     style={styles.favoritoGradient}
                   >
                     <Text style={styles.favoritoNome}>{rota.nome}</Text>
@@ -788,7 +775,7 @@ const AreaUsuario = () => {
                     style={styles.favoritoImagem}
                   />
                   <LinearGradient
-                    colors={["transparent", "rgba(0,0,0,0.8)"]}
+                    {...gradients.overlayDark}
                     style={styles.favoritoGradient}
                   >
                     <Text style={styles.favoritoNome}>

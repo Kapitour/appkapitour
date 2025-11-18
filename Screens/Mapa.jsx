@@ -8,6 +8,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { supabase } from "../lib/supabase";
 import PointDetail from "../components/PointDetail";
+import { handleError, handleNetworkError } from "../utils/errors";
 
 // Função para mapear categorias para ícones
 const getIconForCategory = (categoryName) => {
@@ -147,35 +148,10 @@ export default function Mapa() {
     webviewRef.current?.injectJavaScript(script);
   }, [webviewReady, location, pontos]);
 
-  const calcularRota = async (destino) => {
+  const abrirDetalhe = (destino) => {
     if (!location) return;
-    setLoading(true);
     setSelectedPonto(destino);
-    setShowDetailModal(true); // Mostrar o modal de detalhes ao selecionar um ponto
-    try {
-      const start = [location.longitude, location.latitude];
-      const end = [destino.longitude, destino.latitude];
-      const apiKey = "5b3ce3597851110001cf62488f306a228c6646caa4fa7ec717441fee";
-      const response = await fetch("https://api.openrouteservice.org/v2/directions/driving-car/geojson", {
-        method: "POST",
-        headers: { Authorization: apiKey, "Content-Type": "application/json" },
-        body: JSON.stringify({ coordinates: [start, end] }),
-      });
-      const data = await response.json();
-      if (data?.features?.length > 0) {
-        const coords = data.features[0].geometry.coordinates.map((c) => ({ latitude: c[1], longitude: c[0] }));
-        setRotaCoords(coords);
-        if (webviewReady) {
-          const payload = { rotaCoords: coords };
-          const script = `window.receive(${JSON.stringify(JSON.stringify(payload))}); true;`;
-          webviewRef.current?.injectJavaScript(script);
-        }
-      }
-    } catch (e) {
-      // noop
-    } finally {
-      setLoading(false);
-    }
+    setShowDetailModal(true);
   };
 
   // Função para alternar favorito
@@ -237,10 +213,10 @@ export default function Mapa() {
               webviewRef.current?.injectJavaScript(script);
             } else if (msg.type === "markerClick") {
               const p = pontos.find((pt) => pt.id === msg.id);
-              if (p) calcularRota(p);
+              if (p) abrirDetalhe(p);
             }
-          } catch {}
-        }}
+        } catch {}
+      }}
       />
 
       {selectedPonto && !showDetailModal && (
@@ -267,12 +243,7 @@ export default function Mapa() {
         </Animated.View>
       )}
 
-      {loading && (
-        <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color="#fff" />
-          <Text style={{ color: "#fff" }}>Calculando rota...</Text>
-        </View>
-      )}
+      {/* overlay de carregamento removido, não calculamos mais rota */}
 
       {/* Modal de detalhes do ponto */}
       <Modal
