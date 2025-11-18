@@ -10,7 +10,8 @@ export const salvarProgressoRota = async (rotaId, pontos) => {
       rotaId,
       pontos: pontos.map(p => ({
         id: p.id,
-        completed: p.completed
+        completed: p.completed,
+        rating: typeof p.rating === 'number' ? p.rating : null,
       })),
       timestamp: new Date().toISOString()
     };

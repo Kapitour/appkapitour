@@ -7,7 +7,12 @@ import {
   TouchableOpacity,
   Linking,
   ActivityIndicator,
+  Image,
+  ImageBackground,
+  Alert,
+  Dimensions,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../lib/supabase";
 import { LinearGradient } from "expo-linear-gradient";
 import Checkbox from "expo-checkbox";
@@ -16,6 +21,15 @@ import { salvarProgressoRota, carregarProgressoRota, limparProgressoRota } from 
 export default function DetalhesRota({ rota, voltar }) {
   const [pontos, setPontos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isStarted, setIsStarted] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentRating, setCurrentRating] = useState(0);
+  const windowHeight = Dimensions.get("window").height;
+  const TOP_PADDING = 55;
+  const TAB_BAR_HEIGHT = 90;
+  const GAP_FROM_TAB = 10;
+  const HEADER_OFFSET = 150;
+  const cardMinHeight = Math.max(300, windowHeight - TOP_PADDING - HEADER_OFFSET - TAB_BAR_HEIGHT - GAP_FROM_TAB);
 
   useEffect(() => {
     const fetchPontosDaRota = async () => {
@@ -35,7 +49,7 @@ export default function DetalhesRota({ rota, voltar }) {
 
       const { data: pontosData, error: errorPontos } = await supabase
         .from("pontos_turisticos")
-        .select("id, nome, descricao, rua_numero, latitude, longitude")
+        .select("id, nome, descricao, rua_numero, latitude, longitude, url_img")
         .in("id", pontoIds);
 
       if (errorPontos) {
@@ -43,12 +57,18 @@ export default function DetalhesRota({ rota, voltar }) {
       } else {
         // Carregar progresso salvo
         const progressoSalvo = await carregarProgressoRota(rota.id);
-        
-        const pontosComProgresso = pontosData.map((p) => {
+        // Ordena pontos pela ordem da relação
+        const orderedIds = relacionamentos.sort((a,b)=>a.ordem-b.ordem).map(r=>r.ponto_id);
+        const orderedPontos = orderedIds
+          .map(id => pontosData.find(p => p.id === id))
+          .filter(Boolean);
+
+        const pontosComProgresso = orderedPontos.map((p) => {
           const pontoSalvo = progressoSalvo?.find(ps => ps.id === p.id);
           return {
             ...p,
-            completed: pontoSalvo ? pontoSalvo.completed : false
+            completed: pontoSalvo ? pontoSalvo.completed : false,
+            rating: pontoSalvo && typeof pontoSalvo.rating === 'number' ? pontoSalvo.rating : null,
           };
         });
         
@@ -71,14 +91,14 @@ export default function DetalhesRota({ rota, voltar }) {
   };
 
   const resetarProgresso = async () => {
-    const pontosResetados = pontos.map(p => ({ ...p, completed: false }));
+    const pontosResetados = pontos.map(p => ({ ...p, completed: false, rating: null }));
     setPontos(pontosResetados);
     await salvarProgressoRota(rota.id, pontosResetados);
   };
 
   const limparProgresso = async () => {
     await limparProgressoRota(rota.id);
-    const pontosResetados = pontos.map(p => ({ ...p, completed: false }));
+    const pontosResetados = pontos.map(p => ({ ...p, completed: false, rating: null }));
     setPontos(pontosResetados);
   };
 
@@ -111,66 +131,187 @@ export default function DetalhesRota({ rota, voltar }) {
     >
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={styles.contentContainer}
+        contentContainerStyle={[styles.contentContainer, { paddingBottom: TAB_BAR_HEIGHT + 10 }]}
       >
-        <TouchableOpacity onPress={voltar} style={styles.voltar}>
-          <Text style={styles.voltarText}>← Voltar</Text>
-        </TouchableOpacity>
-
-        <Text style={styles.titulo}>{rota.nome}</Text>
-        <Text style={styles.descricao}>{rota.descricao}</Text>
-
         <View style={styles.progressContainer}>
-          <Text style={styles.progressText}>
-            Progresso: {Math.round(progresso)}%
-          </Text>
+          <Text style={styles.progressText}>Progresso: {Math.round(progresso)}%</Text>
           <View style={styles.progressBar}>
             <View style={[styles.progressFill, { width: `${progresso}%` }]} />
           </View>
-          {progresso > 0 && (
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity
-                onPress={resetarProgresso}
-                style={styles.resetButton}
-              >
-                <Text style={styles.resetText}>🔄 Resetar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={limparProgresso}
-                style={styles.clearButton}
-              >
-                <Text style={styles.clearText}>🗑️ Limpar Histórico</Text>
-              </TouchableOpacity>
+          {isStarted && pontos.length > 0 && (
+            <View style={styles.stepBadge}>
+              <Ionicons name="flag" size={14} color="#fff" />
+              <Text style={styles.stepBadgeText}>Ponto {currentIndex + 1} de {pontos.length}</Text>
             </View>
           )}
         </View>
 
-        {pontos.map((p, i) => (
-          <View key={p.id} style={styles.pontoCard}>
-            <View style={styles.checkboxContainer}>
-              <Checkbox
-                value={p.completed}
-                onValueChange={() => toggleCheckbox(i)}
-                color={p.completed ? "#f7a000" : undefined}
-              />
-              <Text style={[styles.pontoNome, p.completed && styles.completed]}>
-                {p.nome}
-              </Text>
-            </View>
-            <Text style={styles.pontoDesc}>{p.descricao}</Text>
-            <TouchableOpacity
-              onPress={() =>
-                Linking.openURL(
-                  `https://www.google.com/maps/dir/?api=1&destination=${p.latitude},${p.longitude}`
-                )
-              }
-              style={styles.gpsButton}
-            >
-              <Text style={styles.gpsText}>📍 Iniciar Rota no GPS</Text>
+        {!isStarted ? (
+          <>
+            <TouchableOpacity onPress={voltar} style={styles.voltar}>
+              <Text style={styles.voltarText}>← Voltar</Text>
             </TouchableOpacity>
-          </View>
-        ))}
+
+            <Text style={styles.titulo}>{rota.nome}</Text>
+            <Text style={styles.descricao}>{rota.descricao}</Text>
+
+            <TouchableOpacity
+              style={styles.startButton}
+              onPress={() => {
+                const firstIncompleteIndex = pontos.findIndex(p => !p.completed);
+                setCurrentIndex(firstIncompleteIndex >= 0 ? firstIncompleteIndex : 0);
+                setCurrentRating(0);
+                setIsStarted(true);
+              }}
+            >
+              <View style={styles.buttonInline}>
+                <Ionicons name="play" size={18} color="#fff" />
+                <Text style={styles.startText}>Iniciar rota</Text>
+              </View>
+            </TouchableOpacity>
+          </>
+        ) : (
+          pontos[currentIndex]?.url_img ? (
+            <ImageBackground
+              source={{ uri: pontos[currentIndex].url_img }}
+              style={[styles.fullCardBg, { minHeight: cardMinHeight, marginBottom: 10 }]}
+              imageStyle={styles.fullCardBgImage}
+            >
+              {currentIndex > 0 && (
+                <TouchableOpacity
+                  style={styles.backOverlayButton}
+                  onPress={() => {
+                    const prev = currentIndex - 1;
+                    setCurrentIndex(prev);
+                    setCurrentRating(pontos[prev]?.rating || 0);
+                  }}
+                >
+                  <Ionicons name="arrow-back" size={20} color="#fff" />
+                </TouchableOpacity>
+              )}
+              <View style={styles.fullOverlayContent}>
+                <Text style={styles.fullTitle}>{pontos[currentIndex]?.nome}</Text>
+                <Text style={styles.fullDesc}>{pontos[currentIndex]?.descricao}</Text>
+                <View style={styles.ratingRow}>
+                  {[1,2,3,4,5].map(star => (
+                    <TouchableOpacity key={star} onPress={() => setCurrentRating(star)}>
+                      <Ionicons
+                        name={currentRating >= star ? "star" : "star-outline"}
+                        size={26}
+                        color="#f7a000"
+                      />
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                <View style={styles.fullButtons}>
+                  <TouchableOpacity
+                    style={styles.gpsButton}
+                    onPress={() => Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${pontos[currentIndex]?.latitude},${pontos[currentIndex]?.longitude}`)}
+                  >
+                    <View style={styles.buttonInline}>
+                      <Ionicons name="navigate" size={18} color="#fff" />
+                      <Text style={styles.gpsText}>Abrir no GPS</Text>
+                    </View>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.nextButton}
+                    onPress={async () => {
+                      if (currentRating === 0) {
+                        Alert.alert("Avaliação necessária", "Avalie este ponto antes de prosseguir.");
+                        return;
+                      }
+                      const updated = [...pontos];
+                      updated[currentIndex] = { ...updated[currentIndex], completed: true, rating: currentRating };
+                      setPontos(updated);
+                      await salvarProgressoRota(rota.id, updated);
+                      const nextIndex = currentIndex + 1;
+                      if (nextIndex >= updated.length) {
+                        setIsStarted(false);
+                      } else {
+                        setCurrentIndex(nextIndex);
+                        setCurrentRating(0);
+                      }
+                    }}
+                  >
+                    <View style={styles.buttonInline}>
+                      <Ionicons name="arrow-forward" size={18} color="#fff" />
+                      <Text style={styles.nextText}>Próximo</Text>
+                    </View>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </ImageBackground>
+          ) : (
+            <View style={[styles.fullCard, { minHeight: cardMinHeight, marginBottom: 10 }]}>
+              {currentIndex > 0 && (
+                <TouchableOpacity
+                  style={styles.backOverlayButton}
+                  onPress={() => {
+                    const prev = currentIndex - 1;
+                    setCurrentIndex(prev);
+                    setCurrentRating(pontos[prev]?.rating || 0);
+                  }}
+                >
+                  <Ionicons name="arrow-back" size={20} color="#fff" />
+                </TouchableOpacity>
+              )}
+              <Text style={styles.fullTitle}>{pontos[currentIndex]?.nome}</Text>
+              <Text style={styles.fullDesc}>{pontos[currentIndex]?.descricao}</Text>
+              <View style={styles.ratingRow}>
+                {[1,2,3,4,5].map(star => (
+                  <TouchableOpacity key={star} onPress={() => setCurrentRating(star)}>
+                    <Ionicons
+                      name={currentRating >= star ? "star" : "star-outline"}
+                      size={26}
+                      color="#f7a000"
+                    />
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <View style={styles.fullButtons}>
+                <TouchableOpacity
+                  style={styles.gpsButton}
+                  onPress={() => Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${pontos[currentIndex]?.latitude},${pontos[currentIndex]?.longitude}`)}
+                >
+                  <View style={styles.buttonInline}>
+                    <Ionicons name="navigate" size={18} color="#fff" />
+                    <Text style={styles.gpsText}>Abrir no GPS</Text>
+                  </View>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.nextButton}
+                  onPress={async () => {
+                    if (currentRating === 0) {
+                      Alert.alert("Avaliação necessária", "Avalie este ponto antes de prosseguir.");
+                      return;
+                    }
+                    const updated = [...pontos];
+                    updated[currentIndex] = { ...updated[currentIndex], completed: true, rating: currentRating };
+                    setPontos(updated);
+                    await salvarProgressoRota(rota.id, updated);
+                    const nextIndex = currentIndex + 1;
+                    if (nextIndex >= updated.length) {
+                      setIsStarted(false);
+                    } else {
+                      setCurrentIndex(nextIndex);
+                      setCurrentRating(0);
+                    }
+                  }}
+                >
+                  <View style={styles.buttonInline}>
+                    <Ionicons name="arrow-forward" size={18} color="#fff" />
+                    <Text style={styles.nextText}>Próximo</Text>
+                  </View>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )
+        )}
+
+        
+
       </ScrollView>
+
     </LinearGradient>
   );
 }
@@ -186,6 +327,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     padding: 20,
+    paddingTop: 55,
     alignItems: "center",
   },
   
@@ -194,6 +336,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    paddingTop: 55,
   },
   loadingText: {
     color: "#fff",
@@ -260,6 +403,22 @@ const styles = StyleSheet.create({
     backgroundColor: "#f7a000",
     borderRadius: 6,
   },
+  stepBadge: {
+    alignSelf: "center",
+    marginTop: 8,
+    backgroundColor: "#2c2338",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  stepBadgeText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "bold",
+  },
   resetButton: {
     backgroundColor: "#c3073f",
     paddingVertical: 12,
@@ -277,6 +436,11 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "bold",
     fontSize: 16,
+  },
+  buttonInline: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -314,6 +478,13 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
+  },
+  pontoImage: {
+    width: "100%",
+    height: 160,
+    borderRadius: 12,
+    marginBottom: 12,
+    backgroundColor: "#222",
   },
   checkboxContainer: {
     flexDirection: "row",
@@ -353,6 +524,102 @@ const styles = StyleSheet.create({
   },
   gpsText: { 
     color: "#fff", 
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  startButton: {
+    backgroundColor: "#f7a000",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    alignItems: "center",
+    alignSelf: "center",
+    marginBottom: 20,
+  },
+  startText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    justifyContent: "center",
+    padding: 20,
+  },
+  fullCard: {
+    backgroundColor: "#1a1a2e",
+    borderRadius: 16,
+    padding: 16,
+  },
+  fullCardBg: {
+    width: "100%",
+    minHeight: 420,
+    borderRadius: 16,
+    overflow: "hidden",
+    position: "relative",
+  },
+  fullCardBgImage: {
+    resizeMode: "cover",
+  },
+  fullOverlayContent: {
+    padding: 16,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    flex: 1,
+    justifyContent: "flex-end",
+  },
+  backOverlayButton: {
+    position: "absolute",
+    top: 12,
+    left: 12,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    padding: 10,
+    borderRadius: 24,
+    zIndex: 2,
+  },
+  fullTitle: {
+    color: "#fff",
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 6,
+  },
+  fullDesc: {
+    color: "#ddd",
+    marginBottom: 12,
+  },
+  ratingRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 8,
+    marginBottom: 16,
+  },
+  fullButtons: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 12,
+    alignItems: "center",
+  },
+  prevButton: {
+    backgroundColor: "#2c2338",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  prevText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  nextButton: {
+    backgroundColor: "#c3073f",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  nextText: {
+    color: "#fff",
     fontWeight: "bold",
     fontSize: 16,
   },
