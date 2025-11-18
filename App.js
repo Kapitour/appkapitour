@@ -22,8 +22,7 @@ import Mapa from "./Screens/Mapa";
 import Cadastro from "./Screens/Cadastro";
 import AreaUsuario from "./Screens/AreaUsuario";
 import LeitorQR from "./Screens/LeitorQR";
-// ✅ 1. Import da tela de clima no lugar certo (junto com as outras)
-import WeatherScreen from "./Screens/WeatherScreen"; 
+import WeatherScreen from "./Screens/WeatherScreen";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -64,7 +63,6 @@ function withTabTransition(Component) {
   };
 }
 
-// Stack de autenticação (apenas para usuários não logados)
 function AuthStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false, animation: "slide_from_right" }} sceneContainerStyle={{ backgroundColor: "#0f142c" }}>
@@ -98,7 +96,6 @@ function MainTabs() {
     setCurrentIndex(nextIndex);
     setAnimateTabs(true);
   };
-
   return (
     <TabTransitionContext.Provider value={{ direction, animate: animateTabs }}>
       <Tab.Navigator
@@ -181,11 +178,22 @@ function MainTabs() {
   );
 }
 
-// Componente de navegação principal
-function NavigationContent() {
-  const { user, loading } = useAuth();
+// Stack Principal (sem Clerk)
+function MainStackLegacy() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="MainTabs" component={MainTabs} />
+      <Stack.Screen name="LeitorQR" component={LeitorQR} />
+      <Stack.Screen name="Contato" component={Contato} />
+      <Stack.Screen name="Clima" component={WeatherScreen} />
+    </Stack.Navigator>
+  );
+}
 
-  // Tela de loading enquanto verifica autenticação
+// 🔥 TELA DE NAVEGAÇÃO CORRIGIDA (SUPABASE + CLERK)
+function NavigationContent() {
+  const { user, loading } = useAuth(); // pega usuário do SUPABASE
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -254,6 +262,7 @@ export default function App() {
   );
 }
 
+// ESTILOS CORRIGIDOS
 const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1,
@@ -270,8 +279,8 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    overflow: "hidden", 
-    elevation: 5, 
+    overflow: "hidden",
+    elevation: 5,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: -3 },
     shadowOpacity: 0.1,
