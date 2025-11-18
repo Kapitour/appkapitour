@@ -1,82 +1,47 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
-import { useUser, useClerk } from "@clerk/clerk-expo";
+// Supabase-only auth
 
 export const useAuth = () => {
-  const clerkUser = useUser();                   // dados do Clerk (Google)
-  const { signOut: clerkSignOut } = useClerk();  // logout Clerk
-
+  const [user, setUser] = useState(null);
   const [userInfo, setUserInfo] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // ============================================================
-  // SINCRONIZAÇÃO AUTOMÁTICA
-  // Quando Clerk loga → sincroniza com Supabase automaticamente
-  // ============================================================
   useEffect(() => {
-    if (clerkUser.isLoaded) {
-      if (clerkUser.isSignedIn) {
-        syncWithSupabase();
+    let unsub;
+    (async () => {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (session?.user) {
+          setUser(session.user);
+          await loadSupabaseUser(session.user.id);
+        } else {
+          setUser(null);
+          setUserInfo(null);
+        }
+      } finally {
+        setLoading(false);
+      }
+    })();
+
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
+        setUser(session.user);
+        loadSupabaseUser(session.user.id);
       } else {
+        setUser(null);
         setUserInfo(null);
-        setLoading(false);
       }
-    }
-  }, [clerkUser.isSignedIn]);
+    });
+    unsub = listener.subscription;
+    return () => {
+      try { unsub?.unsubscribe(); } catch (_) {}
+    };
+  }, []);
 
-  // ============================================================
-  // SYNC COM SUPABASE (GOOGLE)
-  // ============================================================
-  const syncWithSupabase = async () => {
-    try {
-      setLoading(true);
-
-      const email = clerkUser.user.primaryEmailAddress.emailAddress;
-      const name =
-        clerkUser.user.fullName ||
-        clerkUser.user.firstName ||
-        "Usuário Google";
-
-      // 1 — Verifica se já existe no banco
-      const { data: exists, error: existsError } = await supabase
-        .from("usuarios")
-        .select("*")
-        .eq("email", email)
-        .maybeSingle();
-
-      if (existsError) {
-        console.log("Erro buscando usuário Google:", existsError);
-      }
-
-      if (exists) {
-        setUserInfo(exists);
-        setLoading(false);
-        return;
-      }
-
-      // 2 — Se não existe → cria
-      const { data: created, error: insertError } = await supabase
-        .from("usuarios")
-        .insert({
-          email,
-          nome: name,
-          tipo: "usuario",
-          auth_id: null, // IMPORTANTE: Google não usa auth_id do Supabase
-        })
-        .select()
-        .single();
-
-      if (insertError) {
-        console.log("Erro criando usuário Google:", insertError);
-      }
-
-      setUserInfo(created);
-      setLoading(false);
-    } catch (err) {
-      console.log("Erro sync Google:", err);
-      setLoading(false);
-    }
-  };
+  // Sync via Supabase apenas
 
   // ============================================================
   // LOGIN EMAIL + SENHA (SUPABASE)
@@ -121,32 +86,27 @@ export const useAuth = () => {
   };
 
   // ============================================================
-  // LOGOUT GLOBAL (CLERK + SUPABASE)
+  // LOGOUT (SUPABASE)
   // ============================================================
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
+      setUser(null);
+      setUserInfo(null);
+      return { success: true };
     } catch (err) {
       console.log("Erro supabase signOut:", err);
+      return { success: false, error: err.message };
     }
-
-    try {
-      await clerkSignOut();
-    } catch (err) {
-      console.log("Erro clerk signOut:", err);
-    }
-
-    setUserInfo(null);
   };
 
   // ============================================================
   // STATUS ÚNICO DE LOGIN
   // ============================================================
-  const isLogged =
-    clerkUser.isSignedIn ||      // Logado pelo Google (Clerk)
-    userInfo !== null;           // Logado pelo Supabase (email/senha)
+  const isLogged = userInfo !== null;
 
   return {
+    user,
     userInfo,
     isLogged,
     loading,

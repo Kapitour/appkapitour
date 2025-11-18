@@ -147,7 +147,7 @@ const Loja = () => {
 
   const handleBuy = () => {
     closeModal();
-    navigation.navigate("Login"); // certifique-se que a rota 'Login' existe
+    navigation.navigate("Conta");
   };
 
   // Função para verificar estoque disponível de um produto

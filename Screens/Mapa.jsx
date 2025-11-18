@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Modal } from "react-native";
 import Animated, { FadeIn } from "react-native-reanimated";
-import MapView, { Marker, Polyline } from "react-native-maps";
+import { WebView } from "react-native-webview";
 import * as Location from "expo-location";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -25,7 +25,7 @@ const getIconForCategory = (categoryName) => {
 };
 
 export default function Mapa() {
-  const mapRef = useRef(null);
+  const webviewRef = useRef(null);
   const [location, setLocation] = useState(null);
   const [region, setRegion] = useState(null);
   const [categorias, setCategorias] = useState([]);
@@ -37,6 +37,8 @@ export default function Mapa() {
   const [loadingScreen, setLoadingScreen] = useState(true);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [favorites, setFavorites] = useState([]);
+  const [webviewReady, setWebviewReady] = useState(false);
+  const leafletHtml = `<!DOCTYPE html><html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" /><link rel=\"stylesheet\" href=\"https://unpkg.com/leaflet@1.9.4/dist/leaflet.css\" /><style>html,body,#map{height:100%;margin:0;padding:0;background:#0f142c}</style></head><body><div id=\"map\"></div><script src=\"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js\"></script><script>(function(){var map=L.map('map',{zoomControl:true});var base=L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{attribution:'&copy;OpenStreetMap &copy;Carto',maxZoom:19});base.addTo(map);map.setView([0,0],2);var markersLayer=L.layerGroup().addTo(map);var routeLayer=L.polyline([], {color:'#FF0000', weight:4}).addTo(map);var userMarker=null;function clearMarkers(){markersLayer.clearLayers()}function setUserLocation(lat,lon){if(userMarker){map.removeLayer(userMarker)}if(lat!=null&&lon!=null){userMarker=L.circleMarker([lat,lon],{radius:6,color:'#2a93d5',fillColor:'#2a93d5',fillOpacity:1}).addTo(map)}}function setMarkers(pontos){clearMarkers();(pontos||[]).forEach(function(p){var m=L.marker([p.latitude,p.longitude]);m.on('click',function(){window.ReactNativeWebView&&window.ReactNativeWebView.postMessage(JSON.stringify({type:'markerClick',id:p.id}))});m.addTo(markersLayer)})}function setRoute(coords){routeLayer.setLatLngs(coords||[]);if(coords&&coords.length>1){var b=L.latLngBounds(coords);map.fitBounds(b,{padding:[40,40]})}}window.receive=function(payloadStr){try{var payload=JSON.parse(payloadStr);if(payload.userLocation){setUserLocation(payload.userLocation.latitude,payload.userLocation.longitude);if(!payload.skipCenter){map.setView([payload.userLocation.latitude,payload.userLocation.longitude],13)}}if(payload.pontos){setMarkers(payload.pontos)}if(payload.rotaCoords){setRoute(payload.rotaCoords)}}catch(e){}};setTimeout(function(){window.ReactNativeWebView&&window.ReactNativeWebView.postMessage(JSON.stringify({type:'ready'}))},0);})();</script></body></html>`;
 
   useEffect(() => {
     (async () => {
@@ -135,17 +137,15 @@ export default function Mapa() {
   }, [location, categoriaId]);
 
   useEffect(() => {
-    if (mapRef.current && region && pontos) {
-      const coords = pontos.map((p) => ({ latitude: p.latitude, longitude: p.longitude }));
-      if (location) coords.push({ latitude: location.latitude, longitude: location.longitude });
-      if (coords.length > 0) {
-        mapRef.current.fitToCoordinates(coords, {
-          edgePadding: { top: 60, bottom: 120, left: 60, right: 60 },
-          animated: true,
-        });
-      }
-    }
-  }, [pontos, location, region]);
+    if (!webviewReady) return;
+    const payload = {
+      userLocation: location ? { latitude: location.latitude, longitude: location.longitude } : null,
+      pontos,
+      skipCenter: false,
+    };
+    const script = `window.receive(${JSON.stringify(JSON.stringify(payload))}); true;`;
+    webviewRef.current?.injectJavaScript(script);
+  }, [webviewReady, location, pontos]);
 
   const calcularRota = async (destino) => {
     if (!location) return;
@@ -165,10 +165,11 @@ export default function Mapa() {
       if (data?.features?.length > 0) {
         const coords = data.features[0].geometry.coordinates.map((c) => ({ latitude: c[1], longitude: c[0] }));
         setRotaCoords(coords);
-        mapRef.current?.fitToCoordinates([{ latitude: location.latitude, longitude: location.longitude }, ...coords], {
-          edgePadding: { top: 60, bottom: 140, left: 60, right: 60 },
-          animated: true,
-        });
+        if (webviewReady) {
+          const payload = { rotaCoords: coords };
+          const script = `window.receive(${JSON.stringify(JSON.stringify(payload))}); true;`;
+          webviewRef.current?.injectJavaScript(script);
+        }
       }
     } catch (e) {
       // noop
@@ -217,26 +218,30 @@ export default function Mapa() {
         </ScrollView>
       </View>
 
-      <MapView 
-        ref={mapRef} 
-        style={styles.map} 
-        initialRegion={region}
-        onPress={() => setSelectedPonto(null)}
-      >
-        {location && <Marker coordinate={location} title="Você" pinColor="blue" />}
-        {pontos.map((p) => (
-          <Marker
-            key={p.id}
-            coordinate={{ latitude: p.latitude, longitude: p.longitude }}
-            title={p.nome}
-            onPress={(e) => {
-              e.stopPropagation();
-              calcularRota(p);
-            }}
-          />
-        ))}
-        {rotaCoords.length > 0 && <Polyline coordinates={rotaCoords} strokeColor="#FF0000" strokeWidth={4} />}
-      </MapView>
+      <WebView
+        ref={webviewRef}
+        style={styles.map}
+        originWhitelist={["*"]}
+        source={{ html: leafletHtml }}
+        onMessage={(ev) => {
+          try {
+            const msg = JSON.parse(ev.nativeEvent.data);
+            if (msg.type === "ready") {
+              setWebviewReady(true);
+              const payload = {
+                userLocation: location ? { latitude: location.latitude, longitude: location.longitude } : null,
+                pontos,
+                skipCenter: false,
+              };
+              const script = `window.receive(${JSON.stringify(JSON.stringify(payload))}); true;`;
+              webviewRef.current?.injectJavaScript(script);
+            } else if (msg.type === "markerClick") {
+              const p = pontos.find((pt) => pt.id === msg.id);
+              if (p) calcularRota(p);
+            }
+          } catch {}
+        }}
+      />
 
       {selectedPonto && !showDetailModal && (
         <Animated.View style={styles.infoCard}>

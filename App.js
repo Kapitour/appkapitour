@@ -11,6 +11,8 @@ import { supabase } from "./lib/supabase";
 import Animated, { FadeIn, SlideInLeft, SlideInRight, Easing } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "./hooks/useAuth";
+import { ClerkProvider } from "@clerk/clerk-expo";
+import * as SecureStore from "expo-secure-store";
 
 // Telas
 import Home from "./Screens/Home";
@@ -87,7 +89,7 @@ function MainStack() {
 
 // Tabs principais
 function MainTabs() {
-  const { user } = useAuth();
+  const { isLogged } = useAuth();
   const [direction, setDirection] = useState(0);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [animateTabs, setAnimateTabs] = useState(false);
@@ -127,7 +129,7 @@ function MainTabs() {
         />
         <Tab.Screen
           name="Conta"
-          component={withTabTransition(user ? AreaUsuario : AuthStack)}
+          component={withTabTransition(isLogged ? AreaUsuario : AuthStack)}
           options={{
             tabBarIcon: ({ color }) => (
               <Ionicons name="person-outline" color={color} size={28} />
@@ -192,7 +194,7 @@ function MainStackLegacy() {
 
 // 🔥 TELA DE NAVEGAÇÃO CORRIGIDA (SUPABASE + CLERK)
 function NavigationContent() {
-  const { user, loading } = useAuth(); // pega usuário do SUPABASE
+  const { isLogged, loading } = useAuth();
 
   if (loading) {
     return (
@@ -204,7 +206,7 @@ function NavigationContent() {
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }} sceneContainerStyle={{ backgroundColor: "#0f142c" }}>
-      {user ? (
+      {isLogged ? (
         // Usuário logado - mostrar stack principal com tabs
         <Stack.Screen name="Main" component={MainStack} />
       ) : (

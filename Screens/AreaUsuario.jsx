@@ -404,7 +404,7 @@ const AreaUsuario = () => {
           <Text style={styles.errorText}>Usuário não autenticado</Text>
           <TouchableOpacity
             style={styles.button}
-            onPress={() => navigation.navigate("Login")}
+            onPress={() => navigation.navigate("Conta")}
           >
             <Text style={styles.buttonText}>Fazer Login</Text>
           </TouchableOpacity>

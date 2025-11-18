@@ -15,177 +15,50 @@ import { FontAwesome } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import logo from "../assets/Kapitour.png";
 import { LinearGradient } from "expo-linear-gradient";
+import * as AuthSession from "expo-auth-session";
+import * as WebBrowser from "expo-web-browser";
+WebBrowser.maybeCompleteAuthSession();
 
-import { useClerk, useOAuth, useUser } from "@clerk/clerk-expo";
-import { supabase } from "../constants/supabase"; // ajuste se for ../lib/supabase
+import { supabase } from "../lib/supabase";
 import { useAuth } from "../hooks/useAuth";
 
-// função que verifica/cria no supabase — NÃO usa campos que podem não existir (ex: tipo)
-const signInWithGoogleOnSupabase = async ({ email, name, authId = null }) => {
-  try {
-    // busca se já existe (maybeSingle para não throw)
-    const { data: usuarioExiste, error: findError } = await supabase
-      .from("usuarios")
-      .select("*")
-      .eq("email", email)
-      .maybeSingle();
-
-    if (findError) {
-      // não tratar como fatal se for erro temporário, mas logamos
-      console.warn("Erro ao buscar usuário no supabase:", findError);
-    }
-
-    if (usuarioExiste) {
-      return { success: true, created: false, user: usuarioExiste };
-    }
-
-    // inserir apenas campos básicos
-    const insertPayload = {
-      email,
-      nome: name ?? "Usuário",
-      criado_em: new Date().toISOString(),
-    };
-
-    // se você quiser armazenar auth_id (caso use supabase auth), passe aqui
-    if (authId) insertPayload.auth_id = authId;
-
-    const { data: created, error: insertError } = await supabase
-      .from("usuarios")
-      .insert([insertPayload])
-      .select()
-      .maybeSingle();
-
-    if (insertError) {
-      // log detalhado para você debugar (mostra o json do erro)
-      console.error("Erro insert supabase:", insertError);
-      return { success: false, error: insertError };
-    }
-
-    return { success: true, created: true, user: created };
-  } catch (err) {
-    console.error("Exception signInWithGoogleOnSupabase:", err);
-    return { success: false, error: err };
-  }
-};
-
-// util que espera até userHook estar carregado (timeout em ms)
-const waitForUserLoaded = async (userHook, timeout = 5000) => {
-  const start = Date.now();
-  // se já carregado, retorna
-  if (userHook.isLoaded) return true;
-  // polling
-  return new Promise((resolve) => {
-    const iv = setInterval(() => {
-      if (userHook.isLoaded) {
-        clearInterval(iv);
-        resolve(true);
-        return;
-      }
-      if (Date.now() - start > timeout) {
-        clearInterval(iv);
-        resolve(false);
-      }
-    }, 200);
-  });
-};
+// Supabase-only login
 
 const LoginScreen = () => {
   const navigation = useNavigation();
   const { signIn } = useAuth();
 
-  const clerk = useClerk();
-  const userHook = useUser(); // hook do Clerk para pegar dados do usuário após setSession
-  const googleAuth = useOAuth({ strategy: "oauth_google" });
+  
 
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // HANDLE GOOGLE
   const handleGoogleLogin = async () => {
-  try {
-    setLoading(true);
-
-    // limpar sessão antes
     try {
-      await clerk.signOut();
-    } catch (_) {}
-
-    let result;
-    try {
-      result = await googleAuth.startOAuthFlow();
+      setLoading(true);
+      WebBrowser.maybeCompleteAuthSession();
+      const redirectUri = AuthSession.makeRedirectUri({ useProxy: true });
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: redirectUri,
+        },
+      });
+      if (error || !data?.url) {
+        Alert.alert("Erro", error?.message || "Falha ao iniciar OAuth.");
+        return;
+      }
+      await WebBrowser.openAuthSessionAsync(data.url, redirectUri);
     } catch (err) {
-      console.error("🔥 Erro bruto do Clerk OAuth:", err);
-      Alert.alert("Erro Google", "Falha ao iniciar login com Google.\n" + err.message);
-      return;
+      Alert.alert("Erro", err.message);
+    } finally {
+      setLoading(false);
     }
+  };
 
-    console.log("OAuth result:", result);
-
-    // falha no OAuth ANTES de criar sessão
-    if (!result?.createdSessionId) {
-      console.error("OAuth sem sessionId:", result);
-      Alert.alert("Erro Google", "Falha ao criar sessão via Google.");
-      return;
-    }
-
-    await clerk.setSession(result.createdSessionId);
-
-    // esperar user carregar (9s)
-    const ok = await waitForUserLoaded(userHook, 9000);
-
-    if (!ok || !userHook.user) {
-      console.log("⛔ userHook depois de 9s:", JSON.stringify(userHook, null, 2));
-      Alert.alert(
-        "Erro Google",
-        "Google autenticou, mas não foi possível obter seus dados.\nTente novamente."
-      );
-      return;
-    }
-
-    // pegar email
-    const userObj = userHook.user;
-    const email =
-      userObj?.primaryEmailAddress?.emailAddress ||
-      userObj?.emailAddresses?.[0]?.emailAddress ||
-      null;
-
-    if (!email) {
-      console.error("❌ Clerk não retornou email:", userObj);
-      Alert.alert("Erro", "Google logou, mas não retornou seu e-mail.");
-      return;
-    }
-
-    // salvar no supabase
-    const supa = await signInWithGoogleOnSupabase({
-      email,
-      name: userObj.fullName || userObj.firstName,
-    });
-
-    if (!supa.success) {
-      console.error("❌ ERRO Supabase:", supa.error);
-
-      Alert.alert(
-        "Erro Supabase",
-        JSON.stringify(supa.error, null, 2) // <-- mostra o erro real
-      );
-      return;
-    }
-
-    // sucesso → Home
-    navigation.reset({
-      index: 0,
-      routes: [{ name: "Home" }],
-    });
-
-  } catch (err) {
-    console.error("❌ ERRO FINAL:", err);
-    Alert.alert("Erro", "Falha ao entrar com Google.");
-  } finally {
-    setLoading(false);
-  }
-};
+  
 
 
   // LOGIN EMAIL/SENHA
@@ -198,12 +71,7 @@ const LoginScreen = () => {
     setLoading(true);
     try {
       const result = await signIn(email, senha);
-      if (result.success) {
-        navigation.reset({
-          index: 0,
-          routes: [{ name: "Home" }],
-        });
-      } else {
+      if (!result.success) {
         Alert.alert("Erro no login", result.error || "Credenciais inválidas.");
       }
     } catch (err) {
@@ -267,14 +135,6 @@ const LoginScreen = () => {
               {loading ? "Entrando..." : "Login"}
             </Text>
           </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => navigation.navigate("Cadastro")}
-            disabled={loading}
-          >
-            <Text style={styles.cadastroText}>Cadastrar-se</Text>
-          </TouchableOpacity>
-
           <View style={styles.divider}>
             <Text style={styles.dividerText}>Outras opções:</Text>
           </View>
@@ -287,15 +147,15 @@ const LoginScreen = () => {
             >
               <FontAwesome name="google" size={20} color="#fff" />
             </TouchableOpacity>
-
-            <TouchableOpacity style={styles.iconButton}>
-              <FontAwesome name="facebook" size={20} color="#fff" />
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.iconButton}>
-              <FontAwesome name="instagram" size={20} color="#fff" />
-            </TouchableOpacity>
           </View>
+          <TouchableOpacity
+            onPress={() => navigation.navigate("Cadastro")}
+            disabled={loading}
+          >
+            <Text style={styles.cadastroText}>Cadastrar-se</Text>
+          </TouchableOpacity>
+
+          
         </View>
       </LinearGradient>
     </TouchableWithoutFeedback>

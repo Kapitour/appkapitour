@@ -18,13 +18,13 @@ export default function BottomMenu() {
       {" "}
       {/* Responsividade   */}
       <TouchableOpacity
-        onPress={() => navigation.navigate("Home")}
+        onPress={() => navigation.navigate("Início")}
         accessibilityLabel="Ir para Home"
       >
         <Ionicons name="home-outline" size={28} color="#ffffff" />
       </TouchableOpacity>
       <TouchableOpacity
-        onPress={() => navigation.navigate("Login")}
+        onPress={() => navigation.navigate("Conta")}
         accessibilityLabel="Ir para Login"
       >
         <Ionicons name="person-outline" size={28} color="#ffffff" />
