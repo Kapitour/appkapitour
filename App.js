@@ -1,0 +1,334 @@
+import React, { useEffect, useState, useRef, useContext } from "react";
+import * as NavigationBar from "expo-navigation-bar";
+import * as SystemUI from "expo-system-ui";
+import { StatusBar } from "expo-status-bar";
+import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { StyleSheet, View, ActivityIndicator } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { supabase } from "./lib/supabase";
+import Animated, { FadeIn, SlideInLeft, SlideInRight, Easing } from "react-native-reanimated";
+import { Ionicons } from "@expo/vector-icons";
+import { useAuth } from "./hooks/useAuth";
+import { ClerkProvider } from "@clerk/clerk-expo";
+import * as SecureStore from "expo-secure-store";
+import { AccessibilityProvider } from "./src/accessibility/AccessibilityContext";
+import FloatingAccessibilityButton from "./src/accessibility/FloatingAccessibilityButton";
+import { useAccessibility } from "./src/accessibility/AccessibilityContext";
+import { Text } from "react-native";
+
+// Telas
+import Home from "./Screens/Home";
+import Login from "./Screens/Login";
+import Rotas from "./Screens/Rotas";
+import Loja from "./Screens/Loja";
+import Contato from "./Screens/Contato";
+import Mapa from "./Screens/Mapa";
+import Cadastro from "./Screens/Cadastro";
+import AreaUsuario from "./Screens/AreaUsuario";
+import LeitorQR from "./Screens/LeitorQR";
+import WeatherScreen from "./Screens/WeatherScreen";
+
+const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator();
+
+const TabTransitionContext = React.createContext({ direction: 0, animate: false });
+
+function useDynamicTheme() {
+  const { state } = useAccessibility();
+  const baseBg = "#0f142c";
+  const darkBg = baseBg;
+  const textColor = state.darkMode ? "#FFFFFF" : DefaultTheme.colors.text;
+  return {
+    ...DefaultTheme,
+    colors: {
+      ...DefaultTheme.colors,
+      background: state.darkMode ? darkBg : baseBg,
+      card: state.darkMode ? darkBg : baseBg,
+      text: textColor,
+    },
+  };
+}
+
+function withTabTransition(Component) {
+  return function Wrapped(props) {
+    const { direction, animate } = useContext(TabTransitionContext);
+
+    if (!animate) {
+      return (
+        <View style={{ flex: 1 }}>
+          <Component {...props} />
+        </View>
+      );
+    }
+
+    return (
+      <Animated.View
+        style={{ flex: 1 }}
+        entering={(direction >= 0 ? SlideInRight : SlideInLeft)
+          .duration(200)
+          .easing(Easing.out(Easing.cubic))}
+      >
+        <Component {...props} />
+      </Animated.View>
+    );
+  };
+}
+
+function AuthStack() {
+  const { state } = useAccessibility();
+  const sceneBg = state.darkMode ? '#0f142c' : '#ffffff';
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false, animation: "slide_from_right" }} sceneContainerStyle={{ backgroundColor: sceneBg }}>
+      <Stack.Screen name="Login" component={Login} />
+      <Stack.Screen name="Cadastro" component={Cadastro} />
+    </Stack.Navigator>
+  );
+}
+
+// Stack principal com todas as telas
+function MainStack() {
+  const { state } = useAccessibility();
+  const sceneBg = state.darkMode ? '#0f142c' : '#ffffff';
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false, animation: "slide_from_right" }} sceneContainerStyle={{ backgroundColor: sceneBg }}>
+      <Stack.Screen name="MainTabs" component={MainTabs} />
+      <Stack.Screen name="LeitorQR" component={LeitorQR} />
+      <Stack.Screen name="Contato" component={Contato} />
+      {/* ✅ 2. Tela de clima registrada dentro do navegador principal */}
+      <Stack.Screen name="Clima" component={WeatherScreen} /> 
+    </Stack.Navigator>
+  );
+}
+
+// Tabs principais
+function MainTabs() {
+  const { isLogged } = useAuth();
+  const { state } = useAccessibility();
+  const [direction, setDirection] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [animateTabs, setAnimateTabs] = useState(false);
+  const handleTabPress = (nextIndex) => {
+    setDirection(nextIndex > currentIndex ? 1 : -1);
+    setCurrentIndex(nextIndex);
+    setAnimateTabs(true);
+  };
+  const tabBg = 'white';
+  const labelColorActive = '#c83349';
+  const labelColorInactive = '#bbbbbb';
+  const tabBarStyle = { ...styles.tabBar, backgroundColor: tabBg };
+  return (
+    <TabTransitionContext.Provider value={{ direction, animate: animateTabs }}>
+      <Tab.Navigator
+        detachInactiveScreens={false}
+        screenOptions={{
+          headerShown: false,
+          tabBarShowLabel: true,
+          tabBarActiveTintColor: labelColorActive,
+          tabBarInactiveTintColor: labelColorInactive,
+          tabBarLabelStyle: {
+            fontSize: 12,
+            marginBottom: 5,
+          },
+          tabBarStyle,
+          sceneContainerStyle: { backgroundColor: "#0f142c" },
+        }}
+      >
+        <Tab.Screen
+          name="Início"
+          component={withTabTransition(Home)}
+          options={{
+            tabBarIcon: ({ color }) => (
+              <Ionicons name="home-outline" color={color} size={28} />
+            ),
+          }}
+          listeners={{
+            tabPress: () => handleTabPress(0),
+          }}
+        />
+        <Tab.Screen
+          name="Conta"
+          component={withTabTransition(isLogged ? AreaUsuario : AuthStack)}
+          options={{
+            tabBarIcon: ({ color }) => (
+              <Ionicons name="person-outline" color={color} size={28} />
+            ),
+          }}
+          listeners={{
+            tabPress: () => handleTabPress(1),
+          }}
+        />
+        <Tab.Screen
+          name="Rotas"
+          component={withTabTransition(Rotas)}
+          options={{
+            tabBarIcon: ({ color }) => (
+              <Ionicons name="navigate-outline" color={color} size={28} />
+            ),
+          }}
+          listeners={{
+            tabPress: () => handleTabPress(2),
+          }}
+        />
+        <Tab.Screen
+          name="Loja"
+          component={withTabTransition(Loja)}
+          options={{
+            tabBarIcon: ({ color }) => (
+              <Ionicons name="cart-outline" color={color} size={28} />
+            ),
+          }}
+          listeners={{
+            tabPress: () => handleTabPress(3),
+          }}
+        />
+        <Tab.Screen
+          name="Mapa"
+          component={withTabTransition(Mapa)}
+          options={{
+            tabBarIcon: ({ color }) => (
+              <Ionicons name="map-outline" color={color} size={28} />
+            ),
+          }}
+          listeners={{
+            tabPress: () => handleTabPress(4),
+          }}
+        />
+      </Tab.Navigator>
+    </TabTransitionContext.Provider>
+  );
+}
+
+// Stack Principal (sem Clerk)
+function MainStackLegacy() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="MainTabs" component={MainTabs} />
+      <Stack.Screen name="LeitorQR" component={LeitorQR} />
+      <Stack.Screen name="Contato" component={Contato} />
+      <Stack.Screen name="Clima" component={WeatherScreen} />
+    </Stack.Navigator>
+  );
+}
+
+// 🔥 TELA DE NAVEGAÇÃO CORRIGIDA (SUPABASE + CLERK)
+function NavigationContent() {
+  const { isLogged, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#c83349" />
+      </View>
+    );
+  }
+
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }} sceneContainerStyle={{ backgroundColor: "#0f142c" }}>
+      {isLogged ? (
+        // Usuário logado - mostrar stack principal com tabs
+        <Stack.Screen name="Main" component={MainStack} />
+      ) : (
+        // Usuário não logado - mostrar stack de autenticação
+        <Stack.Screen name="Auth" component={AuthStack} />
+      )}
+    </Stack.Navigator>
+  );
+}
+
+function AppContent() {
+  const theme = useDynamicTheme();
+  const { state } = useAccessibility();
+  useEffect(() => {
+    const scale = state.fontScale || 1;
+    const baseSize = Math.round(14 * scale);
+    const defaultStyle = [{ fontSize: baseSize }];
+    Text.defaultProps = Text.defaultProps || {};
+    Text.defaultProps.allowFontScaling = true;
+    Text.defaultProps.style = defaultStyle;
+  }, [state.fontScale]);
+  return (
+    <NavigationContainer theme={theme}>
+      <StatusBar hidden />
+      <NavigationContent />
+      <FloatingAccessibilityButton />
+    </NavigationContainer>
+  );
+}
+
+export default function App() {
+  useEffect(() => {
+    const hideNavigationBar = async () => {
+      try {
+        await SystemUI.setBackgroundColorAsync("black");
+        await NavigationBar.setVisibilityAsync("hidden");
+      } catch (error) {
+        console.warn("Erro ao esconder NavigationBar:", error);
+      }
+    };
+    hideNavigationBar();
+  }, []);
+
+  useEffect(() => {
+    const prefetch = async () => {
+      try {
+        const cat = await supabase.from("categorias").select("id, nome");
+        if (!cat.error && cat.data) {
+          await AsyncStorage.setItem(
+            "cache:categorias",
+            JSON.stringify({ ts: Date.now(), data: cat.data })
+          );
+        }
+      } catch {}
+      try {
+        const pts = await supabase
+          .from("pontos_turisticos")
+          .select("id, nome, latitude, longitude, descricao, url_img");
+        if (!pts.error && pts.data) {
+          await AsyncStorage.setItem(
+            "cache:pontos:all",
+            JSON.stringify({ ts: Date.now(), data: pts.data })
+          );
+        }
+      } catch {}
+    };
+    prefetch();
+  }, []);
+
+  return (
+    <SafeAreaProvider>
+      <AccessibilityProvider>
+        <AppContent />
+      </AccessibilityProvider>
+    </SafeAreaProvider>
+  );
+}
+
+// ESTILOS CORRIGIDOS
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#fff",
+  },
+  tabBar: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 90,
+    backgroundColor: "white",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    overflow: "hidden",
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    borderTopWidth: 0,
+  },
+});
