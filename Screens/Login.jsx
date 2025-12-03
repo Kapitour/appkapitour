@@ -27,7 +27,7 @@ import { useAuth } from "../hooks/useAuth";
 
 const LoginScreen = () => {
   const navigation = useNavigation();
-  const { signIn } = useAuth();
+  const { signIn, signInWithGoogle } = useAuth();
 
   
 
@@ -37,26 +37,10 @@ const LoginScreen = () => {
   const [showPassword, setShowPassword] = useState(false);
 
   const handleGoogleLogin = async () => {
-    try {
-      setLoading(true);
-      WebBrowser.maybeCompleteAuthSession();
-      const redirectUri = AuthSession.makeRedirectUri({ useProxy: true });
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: redirectUri,
-        },
-      });
-      if (error || !data?.url) {
-        Alert.alert("Erro", error?.message || "Falha ao iniciar OAuth.");
-        return;
-      }
-      await WebBrowser.openAuthSessionAsync(data.url, redirectUri);
-    } catch (err) {
-      Alert.alert("Erro", err.message);
-    } finally {
-      setLoading(false);
-    }
+    setLoading(true);
+    const res = await signInWithGoogle();
+    if (!res.success) Alert.alert("Erro", res.error || "Falha no login Google");
+    setLoading(false);
   };
 
   
