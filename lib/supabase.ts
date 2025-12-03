@@ -3,12 +3,14 @@ import 'react-native-url-polyfill/auto';
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { createClient } from '@supabase/supabase-js'
 import { anonKey, supaUrl } from '../constants/supabase'
+const supportsWebCrypto = typeof (global as any)?.crypto?.subtle?.digest === 'function'
 
 const supabaseUrl = supaUrl
 const supabaseAnonKey = anonKey
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
+    flowType: supportsWebCrypto ? 'pkce' : 'implicit',
     storage: AsyncStorage,
     autoRefreshToken: true,
     persistSession: true,

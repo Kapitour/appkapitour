@@ -40,19 +40,62 @@ const LoginScreen = () => {
     try {
       setLoading(true);
       WebBrowser.maybeCompleteAuthSession();
-      const redirectUri = AuthSession.makeRedirectUri({ useProxy: true });
+      const proxyRedirect = AuthSession.makeRedirectUri({ useProxy: true });
+      const proxyRedirectHost = "exp://exp.host/@barralbruno/kapitest";
+      const expoRedirect = "https://auth.expo.io/@barralbruno/kapitest";
+      const schemeRedirect = "kapitest://";
+      console.log("[OAuth] redirect candidates", { expoRedirect, proxyRedirect, proxyRedirectHost, schemeRedirect });
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: redirectUri,
+          redirectTo: expoRedirect,
         },
       });
+      console.log("[OAuth] signInWithOAuth response", { error: error?.message, url: data?.url });
       if (error || !data?.url) {
         Alert.alert("Erro", error?.message || "Falha ao iniciar OAuth.");
         return;
       }
-      await WebBrowser.openAuthSessionAsync(data.url, redirectUri);
+      console.log("[OAuth] opening WebBrowser with expoRedirect", { authUrl: data.url, returnUrl: expoRedirect });
+      let result = await WebBrowser.openAuthSessionAsync(data.url, expoRedirect);
+      console.log("[OAuth] WebBrowser result (expoRedirect)", result);
+      if (result.type !== "success") {
+        console.log("[OAuth] retry with proxyRedirectHost", { authUrl: data.url, returnUrl: proxyRedirectHost });
+        result = await WebBrowser.openAuthSessionAsync(data.url, proxyRedirectHost);
+        console.log("[OAuth] WebBrowser result (proxyRedirect)", result);
+      }
+      if (result.type !== "success") {
+        console.log("[OAuth] starting new OAuth with schemeRedirect", { returnUrl: schemeRedirect });
+        const { data: data2, error: error2 } = await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: schemeRedirect } });
+        console.log("[OAuth] signInWithOAuth (scheme) response", { error: error2?.message, url: data2?.url });
+        if (!error2 && data2?.url) {
+          result = await WebBrowser.openAuthSessionAsync(data2.url, schemeRedirect);
+          console.log("[OAuth] WebBrowser result (scheme)", result);
+        }
+      }
+      if (result.type === "dismiss") {
+        console.log("[OAuth] browser dismissed, proceeding to check session");
+        try { await WebBrowser.dismissBrowser(); } catch (_) {}
+      } else if (result.type !== "success") {
+        Alert.alert("Erro", "Login cancelado ou não concluído.");
+        try { await WebBrowser.dismissBrowser(); } catch (_) {}
+        return;
+      }
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      console.log("[OAuth] session after return", { hasUser: !!session?.user, userId: session?.user?.id });
+      if (!session?.user) {
+        await new Promise((res) => setTimeout(res, 1500));
+        const {
+          data: { session: session2 },
+        } = await supabase.auth.getSession();
+        console.log("[OAuth] session after retry", { hasUser: !!session2?.user, userId: session2?.user?.id });
+        if (session2?.user) return;
+        Alert.alert("Erro", "Não foi possível concluir o login com o Google.");
+      }
     } catch (err) {
+      console.error("[OAuth] exception", err);
       Alert.alert("Erro", err.message);
     } finally {
       setLoading(false);

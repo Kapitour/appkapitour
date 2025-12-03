@@ -16,6 +16,8 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { gradients } from "../theme/gradients";
 import { supabase } from "./../lib/supabase";
 
 export default function Cadastro() {
@@ -272,28 +274,29 @@ export default function Cadastro() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={{ flex: 1 }}
     >
-      <TouchableOpacity
-        onPress={() => navigation.goBack()}
-        style={styles.backButton}
-      >
-        <Ionicons name="arrow-back" size={28} color="white" />
-      </TouchableOpacity>
-
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <ScrollView
-          contentContainerStyle={styles.container}
-          keyboardShouldPersistTaps="handled"
+      <LinearGradient {...gradients.appBg} style={styles.containerPrincipal}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
         >
-          {!registered ? (
-            <Animated.View
-              style={[
-                styles.formBox,
-                {
-                  opacity: formOpacity,
-                  transform: [{ scale: formScale }],
-                },
-              ]}
-            >
+          <Ionicons name="arrow-back" size={28} color="white" />
+        </TouchableOpacity>
+
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <ScrollView
+            contentContainerStyle={[styles.container, { paddingTop: 55 }]}
+            keyboardShouldPersistTaps="handled"
+          >
+            {!registered ? (
+              <Animated.View
+                style={[
+                  styles.formBox,
+                  {
+                    opacity: formOpacity,
+                    transform: [{ scale: formScale }],
+                  },
+                ]}
+              >
               <Text style={styles.label}>Nome:</Text>
               <TextInput
                 placeholder="Digite seu nome"
@@ -380,15 +383,15 @@ export default function Cadastro() {
               </TouchableOpacity>
             </Animated.View>
           ) : (
-            <Animated.View
-              style={[
-                styles.formBox,
-                {
-                  opacity: formOpacity,
-                  transform: [{ scale: formScale }],
-                },
-              ]}
-            >
+              <Animated.View
+                style={[
+                  styles.formBox,
+                  {
+                    opacity: formOpacity,
+                    transform: [{ scale: formScale }],
+                  },
+                ]}
+              >
               <Text style={styles.success}>
                 Cadastro realizado com sucesso!
               </Text>
@@ -400,16 +403,20 @@ export default function Cadastro() {
               </TouchableOpacity>
             </Animated.View>
           )}
-        </ScrollView>
-      </TouchableWithoutFeedback>
+          </ScrollView>
+        </TouchableWithoutFeedback>
+      </LinearGradient>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
+  containerPrincipal: {
+    flex: 1,
+  },
   container: {
     flexGrow: 1,
-    backgroundColor: "#1a1a1d",
+    backgroundColor: "transparent",
     justifyContent: "center",
     alignItems: "center",
     paddingBottom: 100,

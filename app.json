@@ -16,7 +16,7 @@
     "android": {
       "package": "com.barralbruno.kapitest",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#c83349"
       }
     },

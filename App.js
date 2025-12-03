@@ -4,6 +4,9 @@ import * as SystemUI from "expo-system-ui";
 import { StatusBar } from "expo-status-bar";
 import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { AccessibilityProvider } from "./src/accessibility/AccessibilityContext";
+import { useAccessibility } from "./src/accessibility/AccessibilityContext";
+import FloatingAccessibilityButton from "./src/accessibility/FloatingAccessibilityButton";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { StyleSheet, View, ActivityIndicator } from "react-native";
@@ -32,7 +35,7 @@ const Stack = createNativeStackNavigator();
 
 const TabTransitionContext = React.createContext({ direction: 0, animate: false });
 
-const AppTheme = {
+const AppThemeBase = {
   ...DefaultTheme,
   colors: {
     ...DefaultTheme.colors,
@@ -91,6 +94,7 @@ function MainStack() {
 // Tabs principais
 function MainTabs() {
   const { isLogged } = useAuth();
+  const { state } = useAccessibility();
   const [direction, setDirection] = useState(0);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [animateTabs, setAnimateTabs] = useState(false);
@@ -106,14 +110,17 @@ function MainTabs() {
         screenOptions={{
           headerShown: false,
           tabBarShowLabel: true,
-          tabBarActiveTintColor: "#c83349",
-          tabBarInactiveTintColor: "#bbbbbb",
+          tabBarActiveTintColor: state?.darkMode ? "#ff4d6d" : "#c83349",
+          tabBarInactiveTintColor: state?.darkMode ? "#eeeeee" : "#bbbbbb",
           tabBarLabelStyle: {
-            fontSize: 12,
+            fontSize: 12 * (state?.fontScale || 1),
             marginBottom: 5,
           },
-          tabBarStyle: styles.tabBar,
-          sceneContainerStyle: { backgroundColor: "#0f142c" },
+          tabBarStyle: [
+            styles.tabBar,
+            { backgroundColor: state?.darkMode ? "#0f142c" : "white" },
+          ],
+          sceneContainerStyle: { backgroundColor: state?.darkMode ? "#0f142c" : "#ffffff" },
         }}
       >
         <Tab.Screen
@@ -219,6 +226,7 @@ function NavigationContent() {
 }
 
 export default function App() {
+  const { state } = useAccessibility();
   useEffect(() => {
     const hideNavigationBar = async () => {
       try {
@@ -258,12 +266,22 @@ export default function App() {
   }, []);
 
   return (
-    <SafeAreaProvider>
-      <NavigationContainer theme={AppTheme}>
-        <StatusBar hidden />
-        <NavigationContent />
-      </NavigationContainer>
-    </SafeAreaProvider>
+    <AccessibilityProvider>
+      <SafeAreaProvider>
+        <NavigationContainer theme={{
+          ...AppThemeBase,
+          colors: {
+            ...AppThemeBase.colors,
+            background: state?.darkMode ? "#0f142c" : "#ffffff",
+            card: state?.darkMode ? "#0f142c" : "#ffffff",
+          },
+        }}>
+          <StatusBar hidden />
+          <NavigationContent />
+          <FloatingAccessibilityButton />
+        </NavigationContainer>
+      </SafeAreaProvider>
+    </AccessibilityProvider>
   );
 }
 
