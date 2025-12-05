@@ -18,6 +18,7 @@ import logo from "../assets/Kapitour.png";
 import { LinearGradient } from "expo-linear-gradient";
 import { gradients } from "../theme/gradients";
 import * as AuthSession from "expo-auth-session";
+import { makeRedirectUri } from "expo-auth-session";
 import * as QueryParams from "expo-auth-session/build/QueryParams";
  
 import * as WebBrowser from "expo-web-browser";
@@ -67,11 +68,16 @@ const LoginScreen = () => {
       }
       const proxyUrl = 'https://auth.expo.io/@barralbruno/kapitest';
       const webOrigin = typeof window !== 'undefined' && window.location ? window.location.origin : undefined;
+      const directUrl = makeRedirectUri({ path: 'auth/callback', preferLocalhost: false });
+      console.log('------------------------------------------------');
+      console.log('⚠️ COPIE O LINK ABAIXO E COLE NO SUPABASE ⚠️');
+      console.log(directUrl);
+      console.log('------------------------------------------------');
       console.log('1. Pedindo URL ao Supabase...');
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: Platform.OS === 'web' && webOrigin ? webOrigin : proxyUrl,
+          redirectTo: Platform.OS === 'web' && webOrigin ? webOrigin : directUrl,
           skipBrowserRedirect: true,
         },
       });
@@ -83,7 +89,7 @@ const LoginScreen = () => {
         Alert.alert("Erro", error?.message || "Falha ao iniciar OAuth.");
         return;
       }
-      let result = await WebBrowser.openAuthSessionAsync(data.url, proxyUrl);
+      let result = await WebBrowser.openAuthSessionAsync(data.url, directUrl);
       console.log('3. Resultado do navegador:', result);
       if (result.type !== "success") {
         Alert.alert("Erro", "Login cancelado ou não concluído.");
