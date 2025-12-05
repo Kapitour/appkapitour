@@ -1,0 +1,52 @@
+{
+  "expo": {
+    "name": "Kapitour",
+    "slug": "kapitest",
+    "scheme": "kapitest",
+    "icon": "./assets/icon.png",
+
+    "splash": {
+      "image": "./assets/Kapitour.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#c83349"
+    },
+
+    "favicon": "./assets/favicon.png",
+
+    "android": {
+      "package": "com.barralbruno.kapitest",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#c83349"
+      }
+    },
+
+    "ios": {
+      "bundleIdentifier": "com.barralbruno.kapitest"
+    },
+
+    "extra": {
+      "eas": {
+        "projectId": "31953773-dd59-4e17-8456-752f2924985e"
+      },
+      "clerkRedirectUri": "kapitest://"
+    },
+
+    "owner": "barralbruno",
+
+    "plugins": [
+      "expo-maps",
+      "expo-font",
+      "expo-web-browser",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera",
+          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone",
+          "recordAudioAndroid": true
+        }
+      ],
+      "expo-secure-store"
+    ]
+  }
+}
